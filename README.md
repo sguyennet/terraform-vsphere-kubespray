@@ -8,6 +8,7 @@
 * Terraform
 * Internet connection on the client machine to download Kubespray
 * Internet connection on the Kubernetes nodes to download the Kubernetes binaries
+* A Ubuntu 16.04 vSphere template. If linked clone is used, the template needs to have one and only one snapshot
 
 ## Usage
 
