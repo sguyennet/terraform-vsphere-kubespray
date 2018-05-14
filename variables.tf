@@ -75,8 +75,14 @@ variable "k8s_kubespray_url" {
   default     = "https://github.com/kubernetes-incubator/kubespray.git"
 }
 
+variable "k8s_kubespray_version" {
+  description = "Kubespray version"
+  default     = "2.5.0"
+}
+
 variable "k8s_version" {
   description = "Version of Kubernetes that will be deployed"
+  default     = "1.10.2"
 }
 
 variable "k8s_master_ips" {
