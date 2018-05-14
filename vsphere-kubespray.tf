@@ -178,7 +178,7 @@ resource "null_resource" "config_permission" {
 
 resource "null_resource" "kubespray_download" {
   provisioner "local-exec" {
-    command = "git clone --branch v${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
+    command = "rm -rf kubespray && git clone --branch v${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
   }
 }
 
