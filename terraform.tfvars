@@ -32,10 +32,6 @@ vm_template = "terraform-template/ubuntu-16.04-terraform-template"
 
 vm_linked_clone = "true"
 
-k8s_master_count = "3"
-
-k8s_worker_count = "3"
-
 k8s_master_ips = {
   "0" = ""
   "1" = ""

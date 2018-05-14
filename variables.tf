@@ -70,12 +70,8 @@ variable "vm_linked_clone" {
   description = "Use linked clone to create the vSphere virtual machines from the template (true/false). If you would like to use the linked clone feature, your template need to have one and only one snapshot"
 }
 
-variable "k8s_master_count" {
-  description = "Number of Kubernetes master nodes"
-}
-
-variable "k8s_worker_count" {
-  description = "Number of Kubernetes worker nodes"
+variable "k8s_version" {
+  description = "Version of Kubernetes that will be deployed"
 }
 
 variable "k8s_master_ips" {

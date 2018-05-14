@@ -64,6 +64,7 @@ data "template_file" "kubespray_k8s_cluster" {
   template = "${file("templates/kubespray_k8s_cluster.tpl")}"
 
   vars {
+    kube_version        = "${var.k8s_version}"
     kube_network_plugin = "${var.k8s_network_plugin}"
     weave_password      = "${var.k8s_weave_encryption_password}"
   }
@@ -71,7 +72,7 @@ data "template_file" "kubespray_k8s_cluster" {
 
 # Kubespray master hostname and ip list template #
 data "template_file" "kubespray_hosts_master" {
-  count    = "${var.k8s_master_count}"
+  count    = "${length(var.k8s_master_ips)}"
   template = "${file("templates/kubespray_hosts.tpl")}"
 
   vars {
@@ -82,7 +83,7 @@ data "template_file" "kubespray_hosts_master" {
 
 # Kubespray worker hostname and ip list template #
 data "template_file" "kubespray_hosts_worker" {
-  count    = "${var.k8s_worker_count}"
+  count    = "${length(var.k8s_worker_ips)}"
   template = "${file("templates/kubespray_hosts.tpl")}"
 
   vars {
@@ -93,7 +94,7 @@ data "template_file" "kubespray_hosts_worker" {
 
 # Kubespray master hostname list template #
 data "template_file" "kubespray_hosts_master_list" {
-  count    = "${var.k8s_master_count}"
+  count    = "${length(var.k8s_master_ips)}"
   template = "${file("templates/kubespray_hosts_list.tpl")}"
 
   vars {
@@ -103,7 +104,7 @@ data "template_file" "kubespray_hosts_master_list" {
 
 # Kubespray worker hostname list template #
 data "template_file" "kubespray_hosts_worker_list" {
-  count    = "${var.k8s_worker_count}"
+  count    = "${length(var.k8s_worker_ips)}"
   template = "${file("templates/kubespray_hosts_list.tpl")}"
 
   vars {
@@ -122,7 +123,7 @@ data "template_file" "haproxy" {
 
 # HAProxy server backend template #
 data "template_file" "haproxy_backend" {
-  count    = "${var.k8s_master_count}"
+  count    = "${length(var.k8s_master_ips)}"
   template = "${file("templates/haproxy_backend.tpl")}"
 
   vars {
@@ -212,7 +213,7 @@ resource "vsphere_folder" "folder" {
 
 # Create the Kubernetes master VMs #
 resource "vsphere_virtual_machine" "master" {
-  count            = "${var.k8s_master_count}"
+  count            = "${length(var.k8s_master_ips)}"
   name             = "${var.k8s_node_prefix}-master-${count.index}"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
@@ -273,7 +274,7 @@ resource "vsphere_virtual_machine" "master" {
 
 # Create the Kubernetes worker VMs #
 resource "vsphere_virtual_machine" "worker" {
-  count            = "${var.k8s_worker_count}"
+  count            = "${length(var.k8s_worker_ips)}"
   name             = "${var.k8s_node_prefix}-worker-${count.index}"
   resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
