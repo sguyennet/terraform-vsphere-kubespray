@@ -49,10 +49,10 @@ data "template_file" "kubespray_all" {
 
   vars {
     vsphere_vcenter_ip     = "${var.vsphere_vcenter}"
-    vsphere_user           = "${var.vsphere_user}"
-    vsphere_password       = "${var.vsphere_password}"
+    vsphere_user           = "${var.vsphere_vcp_user}"
+    vsphere_password       = "${var.vsphere_vcp_password}"
     vsphere_datacenter     = "${var.vsphere_datacenter}"
-    vsphere_datastore      = "${var.vm_datastore}"
+    vsphere_datastore      = "${var.vsphere_vcp_datastore}"
     vsphere_working_dir    = "${var.vm_folder}"
     vsphere_resource_pool  = "${var.vsphere_resource_pool}"
     loadbalancer_apiserver = "${var.k8s_haproxy_ip}"
@@ -62,6 +62,11 @@ data "template_file" "kubespray_all" {
 # Kubespray k8s-cluster.yml template #
 data "template_file" "kubespray_k8s_cluster" {
   template = "${file("templates/kubespray_k8s_cluster.tpl")}"
+
+  vars {
+    kube_network_plugin = "${var.k8s_network_plugin}"
+    weave_password      = "${var.k8s_weave_encryption_password}"
+  }
 }
 
 # Kubespray master hostname and ip list template #
@@ -213,9 +218,10 @@ resource "vsphere_virtual_machine" "master" {
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
-  num_cpus = "${var.k8s_master_cpu}"
-  memory   = "${var.k8s_master_ram}"
-  guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
+  num_cpus         = "${var.k8s_master_cpu}"
+  memory           = "${var.k8s_master_ram}"
+  guest_id         = "${data.vsphere_virtual_machine.template.guest_id}"
+  enable_disk_uuid = "true"
 
   network_interface {
     network_id   = "${data.vsphere_network.network.id}"
@@ -273,9 +279,10 @@ resource "vsphere_virtual_machine" "worker" {
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
-  num_cpus = "${var.k8s_worker_cpu}"
-  memory   = "${var.k8s_worker_ram}"
-  guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
+  num_cpus         = "${var.k8s_worker_cpu}"
+  memory           = "${var.k8s_worker_ram}"
+  guest_id         = "${data.vsphere_virtual_machine.template.guest_id}"
+  enable_disk_uuid = "true"
 
   network_interface {
     network_id   = "${data.vsphere_network.network.id}"

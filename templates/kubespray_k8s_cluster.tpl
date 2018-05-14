@@ -63,12 +63,12 @@ kube_oidc_auth: true
 
 # Choose network plugin (cilium, calico, contiv, weave or flannel)
 # Can also be set to 'cloud', which lets the cloud provider setup appropriate routing
-kube_network_plugin: cilium
+kube_network_plugin: ${kube_network_plugin}
 
 # weave's network password for encryption
 # if null then no network encryption
 # you can use --extra-vars to pass the password in command line
-weave_password: EnterPasswordHere
+weave_password: ${weave_password}
 
 # Weave uses consensus mode by default
 # Enabling seed mode allow to dynamically add or remove hosts
