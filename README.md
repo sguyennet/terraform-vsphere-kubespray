@@ -13,6 +13,8 @@
 
 $ cd terraform-vsphere-kubespray
 
+$ vim terraform.tfvars
+
 $ terraform init
 
 $ terraform plan
