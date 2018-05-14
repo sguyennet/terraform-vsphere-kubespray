@@ -20,3 +20,9 @@ $ terraform init
 $ terraform plan
 
 $ terraform apply
+
+## Network plugins
+
+* Flannel
+* Weave
+* Cilium
