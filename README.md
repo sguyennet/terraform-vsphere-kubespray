@@ -12,6 +12,9 @@
 ## Usage
 
 $ cd terraform-vsphere-kubespray
+
 $ terraform init
+
 $ terraform plan
+
 $ terraform apply
