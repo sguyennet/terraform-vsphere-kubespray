@@ -174,13 +174,21 @@ resource "null_resource" "config_permission" {
   depends_on = ["local_file.haproxy", "local_file.kubespray_hosts", "local_file.kubespray_k8s_cluster", "local_file.kubespray_all"]
 }
 
+# Clone Kubespray repository #
+
+resource "null_resource" "kubespray_download" {
+  provisioner "local-exec" {
+    command = "git clone ${var.k8s_kubespray_url}"
+  }
+}
+
 # Execute Kubespray Ansible playbook #
 resource "null_resource" "kubespray" {
   provisioner "local-exec" {
     command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v cluster.yml"
   }
 
-  depends_on = ["local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
+  depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
 }
 
 # Create the local admin.conf kubectl configuration file #

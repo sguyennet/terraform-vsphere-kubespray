@@ -70,6 +70,11 @@ variable "vm_linked_clone" {
   description = "Use linked clone to create the vSphere virtual machines from the template (true/false). If you would like to use the linked clone feature, your template need to have one and only one snapshot"
 }
 
+variable "k8s_kubespray_url" {
+  description = "Kubespray git repository"
+  default     = "https://github.com/kubernetes-incubator/kubespray.git"
+}
+
 variable "k8s_version" {
   description = "Version of Kubernetes that will be deployed"
 }
