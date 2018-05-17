@@ -3,7 +3,7 @@
 #===============================================================================
 
 provider "vsphere" {
-  version        = "1.1.1"
+  version        = "1.5.0"
   vsphere_server = "${var.vsphere_vcenter}"
   user           = "${var.vsphere_user}"
   password       = "${var.vsphere_password}"
@@ -238,7 +238,7 @@ resource "vsphere_virtual_machine" "master" {
   }
 
   disk {
-    name             = "${var.k8s_node_prefix}-master-${count.index}.vmdk"
+    label            = "${var.k8s_node_prefix}-master-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -299,7 +299,7 @@ resource "vsphere_virtual_machine" "worker" {
   }
 
   disk {
-    name             = "${var.k8s_node_prefix}-worker-${count.index}.vmdk"
+    label            = "${var.k8s_node_prefix}-worker-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -358,7 +358,7 @@ resource "vsphere_virtual_machine" "haproxy" {
   }
 
   disk {
-    name             = "${var.k8s_node_prefix}-haproxy.vmdk"
+    label            = "${var.k8s_node_prefix}-haproxy.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
