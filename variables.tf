@@ -22,8 +22,18 @@ variable "vsphere_datacenter" {
   description = "vSphere datacenter"
 }
 
+variable "vsphere_drs_cluster" {
+  description = "vSphere cluster"
+  default     = ""
+}
+
 variable "vsphere_resource_pool" {
   description = "vSphere resource pool"
+}
+
+variable "vsphere_enable_anti_affinity" {
+  description = "Enable anti affinity between master VMs and between worker VMs (DRS need to be enable on the cluster)"
+  default     = "false"
 }
 
 variable "vsphere_vcp_user" {
@@ -41,6 +51,18 @@ variable "vsphere_vcp_datastore" {
 #===========================#
 # Kubernetes infrastructure #
 #===========================#
+
+variable "action" {
+  description = "Which action have to be done on the cluster (create, add_worker, remove_worker, or upgrade)"
+  default     = "create"
+}
+
+variable "worker" {
+  type        = "list"
+  description = "List of worker IPs to remove"
+
+  default = [""]
+}
 
 variable "vm_user" {
   description = "SSH user for the vSphere virtual machines"

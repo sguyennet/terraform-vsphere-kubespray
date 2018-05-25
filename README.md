@@ -12,6 +12,8 @@
 
 ## Usage
 
+### Create a Kubernetes cluster
+
 $ cd terraform-vsphere-kubespray
 
 $ vim terraform.tfvars
@@ -21,6 +23,18 @@ $ terraform init
 $ terraform plan
 
 $ terraform apply
+
+### Add a worker node
+
+$ terraform apply -var "action=add\_worker"
+
+### Delete a worker node
+
+$ terraform apply -var "action=remove\_worker" -var 'worker=["ip1", "ip2"]'
+
+### Upgrade Kubernetes
+
+$ terraform apply -var "action=upgrade"
 
 ## Network plugins
 

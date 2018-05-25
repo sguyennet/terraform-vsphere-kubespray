@@ -9,7 +9,11 @@ vsphere_unverified_ssl = "true"
 
 vsphere_datacenter = ""
 
+vsphere_drs_cluster = ""
+
 vsphere_resource_pool = ""
+
+vsphere_enable_anti_affinity = ""
 
 vsphere_vcp_user = ""
 
