@@ -5,6 +5,7 @@
 * Git
 * Ansible >= v2.4
 * Jinja >= 2.9
+* Python netaddr
 * Terraform
 * Internet connection on the client machine to download Kubespray
 * Internet connection on the Kubernetes nodes to download the Kubernetes binaries
