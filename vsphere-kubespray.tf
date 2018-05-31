@@ -97,17 +97,6 @@ data "template_file" "kubespray_hosts_worker" {
   }
 }
 
-# Kubespray worker remove hostname and ip list template #
-data "template_file" "kubespray_hosts_remove_worker" {
-  count    = "${length(var.worker)}"
-  template = "${file("templates/kubespray_hosts.tpl")}"
-
-  vars {
-    hostname = "remove-worker-${count.index}"
-    host_ip  = "${element(var.worker, count.index)}"
-  }
-}
-
 # Kubespray master hostname list template #
 data "template_file" "kubespray_hosts_master_list" {
   count    = "${length(var.k8s_master_ips)}"
@@ -125,16 +114,6 @@ data "template_file" "kubespray_hosts_worker_list" {
 
   vars {
     hostname = "${var.k8s_node_prefix}-worker-${count.index}"
-  }
-}
-
-# Kubespray worker remove hostname list template #
-data "template_file" "kubespray_hosts_remove_worker_list" {
-  count    = "${length(var.worker)}"
-  template = "${file("templates/kubespray_hosts_list.tpl")}"
-
-  vars {
-    hostname = "remove-worker-${count.index}"
   }
 }
 
@@ -181,14 +160,6 @@ resource "local_file" "kubespray_hosts" {
   filename = "config/hosts.ini"
 }
 
-# Create Kubespray hosts_remove.ini configuration file from Terraform templates #
-resource "local_file" "kubespray_hosts_remove" {
-  count = "${var.action == "remove_worker" ? 1 : 0}"
-
-  content  = "${join("", data.template_file.kubespray_hosts_master.*.rendered)}${join("", data.template_file.kubespray_hosts_remove_worker.*.rendered)}\n[kube-master]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[etcd]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[kube-node]\n${join("", data.template_file.kubespray_hosts_remove_worker_list.*.rendered)}\n[k8s-cluster:children]\nkube-master\nkube-node"
-  filename = "config/hosts_remove.ini"
-}
-
 # Create HAProxy configuration from Terraform templates #
 resource "local_file" "haproxy" {
   content  = "${data.template_file.haproxy.rendered}${join("", data.template_file.haproxy_backend.*.rendered)}"
@@ -212,7 +183,7 @@ resource "null_resource" "config_permission" {
 
 resource "null_resource" "kubespray_download" {
   provisioner "local-exec" {
-    command = "rm -rf kubespray && git clone --branch v${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
+    command = "rm -rf kubespray && git clone --branch ${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
   }
 }
 
@@ -221,7 +192,7 @@ resource "null_resource" "kubespray_create" {
   count = "${var.action == "create" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v cluster.yml"
+    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v cluster.yml -e kube_version=${var.k8s_version}"
   }
 
   depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
@@ -238,23 +209,12 @@ resource "null_resource" "kubespray_add" {
   depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
 }
 
-# Execute remove Kubespray Ansible playbook #
-resource "null_resource" "kubespray_remove" {
-  count = "${var.action == "remove_worker" ? 1 : 0}"
-
-  provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts_remove.ini -b -u ${var.vm_user} -e 'delete_nodes_confirmation=yes' -v remove-node.yml"
-  }
-
-  depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts"]
-}
-
 # Execute upgrade Kubespray Ansible playbook #
 resource "null_resource" "kubespray_upgrade" {
   count = "${var.action == "upgrade" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v cluster.yml -e kube_version=v${var.k8s_version}"
+    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v upgrade-cluster.yml -e kube_version=${var.k8s_version}"
   }
 
   depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
@@ -415,19 +375,22 @@ resource "vsphere_virtual_machine" "worker" {
     ]
   }
 
-  lifecycle {
-    create_before_destroy = true
+  provisioner "local-exec" {
+    when    = "destroy"
+    command = "sed 's/${var.k8s_node_prefix}-worker-[0-9]*$//' config/hosts.ini > config/hosts_remove_${count.index}.ini && sed -i '1 i\\${var.k8s_node_prefix}-worker-${count.index}\\ ansible_host=${self.default_ip_address}' config/hosts_remove_${count.index}.ini && sed -i 's/\\[kube-node\\]/\\[kube-node\\]\\n${var.k8s_node_prefix}-worker-${count.index}/' config/hosts_remove_${count.index}.ini"
   }
 
-  depends_on = ["vsphere_virtual_machine.master"]
-}
+  provisioner "local-exec" {
+    when    = "destroy"
+    command = "cd kubespray && ansible-playbook -i ../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'delete_nodes_confirmation=yes' -v remove-node.yml"
+  }
 
-# Create anti affinity rule for the Kubernetes worker VMs #
-resource "vsphere_compute_cluster_vm_anti_affinity_rule" "worker_anti_affinity_rule" {
-  count               = "${var.vsphere_enable_anti_affinity == "true" ? 1 : 0}"
-  name                = "${var.k8s_node_prefix}-worker-anti-affinity-rule"
-  compute_cluster_id  = "${data.vsphere_compute_cluster.cluster.id}"
-  virtual_machine_ids = ["${vsphere_virtual_machine.worker.*.id}"]
+  provisioner "local-exec" {
+    when    = "destroy"
+    command = "rm config/hosts_remove_${count.index}.ini"
+  }
+
+  depends_on = ["vsphere_virtual_machine.master", "local_file.kubespray_hosts", "local_file.kubespray_k8s_cluster", "local_file.kubespray_all"]
 }
 
 # Create the HAProxy load balancer VM #
