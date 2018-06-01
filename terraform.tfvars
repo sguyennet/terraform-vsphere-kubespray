@@ -38,9 +38,9 @@ vm_linked_clone = "true"
 
 k8s_kubespray_url = "https://github.com/kubernetes-incubator/kubespray.git"
 
-k8s_kubespray_version = "2.5.0"
+k8s_kubespray_version = "v2.5.0"
 
-k8s_version = "1.10.2"
+k8s_version = "v1.10.2"
 
 k8s_master_ips = {
   "0" = ""
