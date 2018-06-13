@@ -43,4 +43,4 @@ frontend kubernetes
 backend kubernetes-master-nodes
 	mode tcp
 	balance roundrobin
-	option ssl-hello-chk
+	option tcp-chk
