@@ -15,7 +15,7 @@
 
 ## Usage
 
-All the steps to use this Terraform script are describe in details here:
+All the steps to use this Terraform script are described in details here:
 https://blog.inkubate.io/install-and-manage-automatically-a-kubernetes-cluster-on-vmware-vsphere-with-terraform-and-kubespray/
 
 ### Create a Kubernetes cluster
