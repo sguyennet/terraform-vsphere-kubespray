@@ -72,6 +72,7 @@ data "template_file" "kubespray_k8s_cluster" {
     kube_version        = "${var.k8s_version}"
     kube_network_plugin = "${var.k8s_network_plugin}"
     weave_password      = "${var.k8s_weave_encryption_password}"
+    k8s_dns_mode        = "${var.k8s_dns_mode}"
   }
 }
 

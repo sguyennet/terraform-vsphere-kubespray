@@ -68,6 +68,8 @@ k8s_network_plugin = "weave"
 
 k8s_weave_encryption_password = ""
 
+k8s_dns_mode = ""
+
 k8s_master_cpu = "1"
 
 k8s_master_ram = "2048"

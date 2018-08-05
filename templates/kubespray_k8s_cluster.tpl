@@ -121,7 +121,7 @@ cluster_name: cluster.local
 # Subdomains of DNS domain to be resolved via /etc/resolv.conf for hostnet pods
 ndots: 2
 # Can be dnsmasq_kubedns, kubedns, coredns, coredns_dual, manual or none
-dns_mode: kubedns
+dns_mode: ${k8s_dns_mode}
 # Set manual server if using a custom cluster DNS server
 #manual_dns_server: 10.x.x.x
 
