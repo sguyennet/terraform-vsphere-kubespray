@@ -1,10 +1,7 @@
-# Valid bootstrap options (required): ubuntu, coreos, centos, none
-bootstrap_os: ubuntu
-
-#Directory where etcd data stored
+## Directory where etcd data stored
 etcd_data_dir: /var/lib/etcd
 
-# Directory where the binaries will be installed
+## Directory where the binaries will be installed
 bin_dir: /usr/local/bin
 
 ## The access_ip variable is used to define how other nodes should access
@@ -14,18 +11,9 @@ bin_dir: /usr/local/bin
 ## but don't know about that address themselves.
 #access_ip: 1.1.1.1
 
-### LOADBALANCING AND ACCESS MODES
-## Enable multiaccess to configure etcd clients to access all of the etcd members directly
-## as the "http://hostX:port, http://hostY:port, ..." and ignore the proxy loadbalancers.
-## This may be the case if clients support and loadbalance multiple etcd servers natively.
-etcd_multiaccess: true
-
-### ETCD: disable peer client cert authentication.
-# This affects ETCD_PEER_CLIENT_CERT_AUTH variable
-#etcd_peer_client_auth: true
 
 ## External LB example config
-## apiserver_loadbalancer_domain_name: "elb.some.domain"
+apiserver_loadbalancer_domain_name: "${loadbalancer_apiserver}"
 loadbalancer_apiserver:
   address: "${loadbalancer_apiserver}"
   port: 6443
@@ -44,15 +32,6 @@ loadbalancer_apiserver:
 ## modules.
 #kubelet_load_modules: false
 
-## Internal network total size. This is the prefix of the
-## entire network. Must be unused in your environment.
-#kube_network_prefix: 18
-
-## With calico it is possible to distributed routes with border routers of the datacenter.
-## Warning : enabling router peering will disable calico's default behavior ('node mesh').
-## The subnets of each nodes will be distributed by the datacenter router
-#peer_with_router: false
-
 ## Upstream dns servers used by dnsmasq
 #upstream_dns_servers:
 #  - 8.8.8.8
@@ -60,10 +39,12 @@ loadbalancer_apiserver:
 
 ## There are some changes specific to the cloud providers
 ## for instance we need to encapsulate packets with some network plugins
-## If set the possible values are either 'gce', 'aws', 'azure', 'openstack', 'vsphere', or 'external'
+## If set the possible values are either 'gce', 'aws', 'azure', 'openstack', 'vsphere', 'oci', or 'external'
 ## When openstack is used make sure to source in the openstack credentials
 ## like you would do when using nova-client before starting the playbook.
-cloud_provider: "vsphere"
+## Note: The 'external' cloud provider is not supported. 
+## TODO(riverzhang): https://kubernetes.io/docs/tasks/administer-cluster/running-cloud-controller/#running-cloud-controller-manager
+cloud_provider:  "vsphere"
 vsphere_vcenter_ip: "${vsphere_vcenter_ip}"
 vsphere_vcenter_port: 443
 vsphere_insecure: 1
@@ -75,73 +56,47 @@ vsphere_working_dir: "${vsphere_working_dir}"
 vsphere_scsi_controller_type: "pvscsi"
 vsphere_resource_pool: "${vsphere_resource_pool}"
 
-## When azure is used, you need to also set the following variables.
-## see docs/azure.md for details on how to get these values
-#azure_tenant_id:
-#azure_subscription_id:
-#azure_aad_client_id:
-#azure_aad_client_secret:
-#azure_resource_group:
-#azure_location:
-#azure_subnet_name:
-#azure_security_group_name:
-#azure_vnet_name:
-#azure_vnet_resource_group:
-#azure_route_table_name:
+## kubeadm deployment mode
+kubeadm_enabled: true
 
-## When OpenStack is used, Cinder version can be explicitly specified if autodetection fails (Fixed in 1.9: https://github.com/kubernetes/kubernetes/issues/50461)
-#openstack_blockstorage_version: "v1/v2/auto (default)"
-## When OpenStack is used, if LBaaSv2 is available you can enable it with the following 2 variables.
-#openstack_lbaas_enabled: True
-#openstack_lbaas_subnet_id: "Neutron subnet ID (not network ID) to create LBaaS VIP"
-## To enable automatic floating ip provisioning, specify a subnet.
-#openstack_lbaas_floating_network_id: "Neutron network ID (not subnet ID) to get floating IP from, disabled by default"
-## Override default LBaaS behavior
-#openstack_lbaas_use_octavia: False
-#openstack_lbaas_method: "ROUND_ROBIN"
-#openstack_lbaas_provider: "haproxy"
-#openstack_lbaas_create_monitor: "yes"
-#openstack_lbaas_monitor_delay: "1m"
-#openstack_lbaas_monitor_timeout: "30s"
-#openstack_lbaas_monitor_max_retries: "3"
+# Skip alert information
+skip_non_kubeadm_warning: false
 
-## Uncomment to enable experimental kubeadm deployment mode
-#kubeadm_enabled: false
 ## Set these proxy values in order to update package manager and docker daemon to use proxies
 #http_proxy: ""
 #https_proxy: ""
+
 ## Refer to roles/kubespray-defaults/defaults/main.yml before modifying no_proxy
 #no_proxy: ""
 
-## Uncomment this if you want to force overlay/overlay2 as docker storage driver
-## Please note that overlay2 is only supported on newer kernels
-#docker_storage_options: -s overlay2
+## Some problems may occur when downloading files over https proxy due to ansible bug
+## https://github.com/ansible/ansible/issues/32750. Set this variable to False to disable
+## SSL validation of get_url module. Note that kubespray will still be performing checksum validation.
+#download_validate_certs: False
 
-# Uncomment this if you have more than 3 nameservers, then we'll only use the first 3.
-#docker_dns_servers_strict: false
-
-## Default packages to install within the cluster, f.e:
-#kpm_packages:
-# - name: kube-system/grafana
+## If you need exclude all cluster nodes from proxy and other resources, add other resources here.
+#additional_no_proxy: ""
 
 ## Certificate Management
-## This setting determines whether certs are generated via scripts or whether a
-## cluster of Hashicorp's Vault is started to issue certificates (using etcd
-## as a backend). Options are "script" or "vault"
+## This setting determines whether certs are generated via scripts.
+## Chose 'none' if you provide your own certificates.
+## Option is  "script", "none"
+## note: vault is removed
 #cert_management: script
 
-# Set to true to allow pre-checks to fail and continue deployment
+## Set to true to allow pre-checks to fail and continue deployment
 #ignore_assert_errors: false
 
-## Etcd auto compaction retention for mvcc key value store in hour
-#etcd_compaction_retention: 0
-
-## Set level of detail for etcd exported metrics, specify 'extensive' to include histogram metrics.
-#etcd_metrics: basic
-
-## Etcd is restricted by default to 512M on systems under 4GB RAM, 512MB is not enough for much more than testing.
-## Set this if your etcd nodes have less than 4GB but you want more RAM for etcd. Set to 0 for unrestricted RAM.
-#etcd_memory_limit: "512M"
-
-# The read-only port for the Kubelet to serve on with no authentication/authorization. Uncomment to enable.
+## The read-only port for the Kubelet to serve on with no authentication/authorization. Uncomment to enable.
 #kube_read_only_port: 10255
+
+## Set true to download and cache container
+#download_container: true
+
+## Deploy container engine
+# Set false if you want to deploy container engine manually.
+#deploy_container_engine: true
+
+## Set Pypi repo and cert accordingly
+#pyrepo_index: https://pypi.example.com/simple
+#pyrepo_cert: /etc/ssl/certs/ca-certificates.crt

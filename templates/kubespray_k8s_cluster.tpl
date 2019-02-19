@@ -19,7 +19,10 @@ kube_users_dir: "{{ kube_config_dir }}/users"
 kube_api_anonymous_auth: true
 
 ## Change this to use another Kubernetes version, e.g. a current beta release
-kube_version: v1.10.2
+kube_version: ${kube_version}
+
+# kubernetes image repo define
+kube_image_repo: "gcr.io/google-containers"
 
 # Where the binaries will be downloaded.
 # Note: ensure that you've enough disk space (about 1G)
@@ -34,9 +37,12 @@ kube_cert_group: kube-cert
 # Cluster Loglevel configuration
 kube_log_level: 2
 
+# Directory where credentials will be stored
+credentials_dir: "{{ inventory_dir }}/credentials"
+
 # Users to create for basic auth in Kubernetes API via HTTP
 # Optionally add groups for user
-kube_api_pwd: "{{ lookup('password', inventory_dir + '/credentials/kube_user.creds length=15 chars=ascii_letters,digits') }}"
+kube_api_pwd: "{{ lookup('password', credentials_dir + '/kube_user.creds length=15 chars=ascii_letters,digits') }}"
 kube_users:
   kube:
     pass: "{{kube_api_pwd}}"
@@ -45,7 +51,7 @@ kube_users:
       - system:masters
 
 ## It is possible to activate / deactivate selected authentication methods (basic auth, static token auth)
-kube_oidc_auth: true
+#kube_oidc_auth: false
 #kube_basic_auth: false
 #kube_token_auth: false
 
@@ -53,40 +59,19 @@ kube_oidc_auth: true
 ## Variables for OpenID Connect Configuration https://kubernetes.io/docs/admin/authentication/
 ## To use OpenID you have to deploy additional an OpenID Provider (e.g Dex, Keycloak, ...)
 
-#kube_oidc_url: "https://k8s-kubespray-dex.inkubate.io:32000"
-#kube_oidc_client_id: "example-app"
+# kube_oidc_url: https:// ...
+# kube_oidc_client_id: kubernetes
 ## Optional settings for OIDC
-#kube_oidc_ca_file: "{{ kube_cert_dir }}/ca.pem"
-#kube_oidc_username_claim: "email"
-#kube_oidc_groups_claim: "groups"
+# kube_oidc_ca_file: "{{ kube_cert_dir }}/ca.pem"
+# kube_oidc_username_claim: sub
+# kube_oidc_username_prefix: oidc:
+# kube_oidc_groups_claim: groups
+# kube_oidc_groups_prefix: oidc:
 
 
 # Choose network plugin (cilium, calico, contiv, weave or flannel)
 # Can also be set to 'cloud', which lets the cloud provider setup appropriate routing
 kube_network_plugin: ${kube_network_plugin}
-
-# weave's network password for encryption
-# if null then no network encryption
-# you can use --extra-vars to pass the password in command line
-weave_password: ${weave_password}
-
-# Weave uses consensus mode by default
-# Enabling seed mode allow to dynamically add or remove hosts
-# https://www.weave.works/docs/net/latest/ipam/
-weave_mode_seed: false
-
-# This two variable are automatically changed by the weave's role, do not manually change these values
-# To reset values :
-# weave_seed: uninitialized
-# weave_peers: uninitialized
-weave_seed: uninitialized
-weave_peers: uninitialized
-
-# Set the MTU of Weave (default 1376, Jumbo Frames: 8916)
-weave_mtu: 1376
-
-# Enable kubernetes network policies
-enable_network_policy: false
 
 # Kubernetes internal network for services, unused block of space.
 kube_service_addresses: 10.233.0.0/18
@@ -104,13 +89,24 @@ kube_network_node_prefix: 24
 # The port the API Server will be listening on.
 kube_apiserver_ip: "{{ kube_service_addresses|ipaddr('net')|ipaddr(1)|ipaddr('address') }}"
 kube_apiserver_port: 6443 # (https)
-kube_apiserver_insecure_port: 8080 # (http)
+#kube_apiserver_insecure_port: 8080 # (http)
 # Set to 0 to disable insecure port - Requires RBAC in authorization_modes and kube_api_anonymous_auth: true
-#kube_apiserver_insecure_port: 0 # (disabled)
+kube_apiserver_insecure_port: 0 # (disabled)
 
 # Kube-proxy proxyMode configuration.
 # Can be ipvs, iptables
-kube_proxy_mode: iptables
+kube_proxy_mode: ipvs
+
+# A string slice of values which specify the addresses to use for NodePorts.
+# Values may be valid IP blocks (e.g. 1.2.3.0/24, 1.2.3.4/32).
+# The default empty string slice ([]) means to use all local addresses.
+# kube_proxy_nodeport_addresses_cidr is retained for legacy config
+kube_proxy_nodeport_addresses: >-
+  {%- if kube_proxy_nodeport_addresses_cidr is defined -%}
+  [{{ kube_proxy_nodeport_addresses_cidr }}]
+  {%- else -%}
+  []
+  {%- endif -%}
 
 ## Encrypting Secret Data at Rest (experimental)
 kube_encrypt_secret_data: false
@@ -135,84 +131,31 @@ skydns_server_secondary: "{{ kube_service_addresses|ipaddr('net')|ipaddr(4)|ipad
 dnsmasq_dns_server: "{{ kube_service_addresses|ipaddr('net')|ipaddr(2)|ipaddr('address') }}"
 dns_domain: "{{ cluster_name }}"
 
-# Path used to store Docker data
-docker_daemon_graph: "/var/lib/docker"
+## Container runtime
+## docker for docker and crio for cri-o.
+container_manager: docker
 
-## A string of extra options to pass to the docker daemon.
-## This string should be exactly as you wish it to appear.
-## An obvious use case is allowing insecure-registry access
-## to self hosted registries like so:
-
-docker_options: "--insecure-registry={{ kube_service_addresses }} --graph={{ docker_daemon_graph }}  {{ docker_log_opts }}"
-docker_bin_dir: "/usr/bin"
-
-# Settings for containerized control plane (etcd/kubelet/secrets)
+## Settings for containerized control plane (etcd/kubelet/secrets)
 etcd_deployment_type: docker
 kubelet_deployment_type: host
-vault_deployment_type: docker
 helm_deployment_type: host
 
 # K8s image pull policy (imagePullPolicy)
 k8s_image_pull_policy: IfNotPresent
 
-# Kubernetes dashboard
-# RBAC required. see docs/getting-started.md for access details.
-dashboard_enabled: true
+# audit log for kubernetes
+kubernetes_audit: false
 
-# Monitoring apps for k8s
-efk_enabled: false
+# dynamic kubelet configuration
+dynamic_kubelet_configuration: false
 
-# Helm deployment
-helm_enabled: true
+# define kubelet config dir for dynamic kubelet
+#kubelet_config_dir:
+default_kubelet_config_dir: "{{ kube_config_dir }}/dynamic_kubelet_dir"
+dynamic_kubelet_configuration_dir: "{{ kubelet_config_dir | default(default_kubelet_config_dir) }}"
 
-# Istio deployment
-istio_enabled: false
-
-# Registry deployment
-registry_enabled: false
-# registry_namespace: "{{ system_namespace }}"
-# registry_storage_class: ""
-# registry_disk_size: "10Gi"
-
-# Local volume provisioner deployment
-local_volume_provisioner_enabled: false
-# local_volume_provisioner_namespace: "{{ system_namespace }}"
-# local_volume_provisioner_base_dir: /mnt/disks
-# local_volume_provisioner_mount_dir: /mnt/disks
-# local_volume_provisioner_storage_class: local-storage
-
-# CephFS provisioner deployment
-cephfs_provisioner_enabled: false
-# cephfs_provisioner_namespace: "{{ system_namespace }}"
-# cephfs_provisioner_cluster: ceph
-# cephfs_provisioner_monitors:
-#   - 172.24.0.1:6789
-#   - 172.24.0.2:6789
-#   - 172.24.0.3:6789
-# cephfs_provisioner_admin_id: admin
-# cephfs_provisioner_secret: secret
-# cephfs_provisioner_storage_class: cephfs
-
-# Nginx ingress controller deployment
-ingress_nginx_enabled: false
-# ingress_nginx_host_network: false
-# ingress_nginx_namespace: "ingress-nginx"
-# ingress_nginx_insecure_port: 80
-# ingress_nginx_secure_port: 443
-# ingress_nginx_configmap:
-#   map-hash-bucket-size: "128"
-#   ssl-protocols: "SSLv2"
-# ingress_nginx_configmap_tcp_services:
-#   9000: "default/example-go:8080"
-# ingress_nginx_configmap_udp_services:
-#   53: "kube-system/kube-dns:53"
-
-# Cert manager deployment
-cert_manager_enabled: false
-# cert_manager_namespace: "cert-manager"
-
-# Add Persistent Volumes Storage Class for corresponding cloud provider ( OpenStack is only supported now )
-persistent_volumes_enabled: false
+# pod security policy (RBAC must be enabled either by having 'RBAC' in authorization_modes or kubeadm enabled)
+podsecuritypolicy_enabled: false
 
 # Make a copy of kubeconfig on the host that runs Ansible in {{ inventory_dir }}/artifacts
 # kubeconfig_localhost: false
@@ -231,14 +174,26 @@ persistent_volumes_enabled: false
 # Acceptable options are 'pods', 'system-reserved', 'kube-reserved' and ''. Default is "".
 # kubelet_enforce_node_allocatable: pods
 
-# kubelet authentication token webhook (default false)
-kubelet_authentication_token_webhook: true
-
 ## Supplementary addresses that can be added in kubernetes ssl keys.
 ## That can be useful for example to setup a keepalived virtual IP
 # supplementary_addresses_in_ssl_keys: [10.0.0.1, 10.0.0.2, 10.0.0.3]
 
 ## Running on top of openstack vms with cinder enabled may lead to unschedulable pods due to NoVolumeZoneConflict restriction in kube-scheduler.
-## See https://github.com/kubernetes-incubator/kubespray/issues/2141
+## See https://github.com/kubernetes-sigs/kubespray/issues/2141
 ## Set this variable to true to get rid of this issue
 volume_cross_zone_attachment: false
+# Add Persistent Volumes Storage Class for corresponding cloud provider ( OpenStack is only supported now )
+persistent_volumes_enabled: false
+
+## Container Engine Acceleration
+## Enable container acceleration feature, for example use gpu acceleration in containers
+# nvidia_accelerator_enabled: true
+## Nvidia GPU driver install. Install will by done by a (init) pod running as a daemonset.
+## Important: if you use Ubuntu then you should set in all.yml 'docker_storage_options: -s overlay2'
+## Array with nvida_gpu_nodes, leave empty or comment if you dont't want to install drivers.
+## Labels and taints won't be set to nodes if they are not in the array.
+# nvidia_gpu_nodes:
+#   - kube-gpu-001
+# nvidia_driver_version: "384.111"
+## flavor can be tesla or gtx
+# nvidia_gpu_flavor: gtx

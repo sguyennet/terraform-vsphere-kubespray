@@ -71,6 +71,13 @@ variable "vm_user" {
 variable "vm_password" {
   description = "SSH password for the vSphere virtual machines"
 }
+variable "vm_privilege_password" {
+  description = "Sudo or su password for the vSphere virtual machines"
+}
+
+variable "vm_distro" {
+  description = "Linux distribution of the vSphere virtual machines (ubuntu/centos/debian/rhel)"
+}
 
 variable "vm_datastore" {
   description = "Datastore used for the vSphere virtual machines"
@@ -90,6 +97,7 @@ variable "vm_folder" {
 
 variable "vm_linked_clone" {
   description = "Use linked clone to create the vSphere virtual machines from the template (true/false). If you would like to use the linked clone feature, your template need to have one and only one snapshot"
+  default = "false"
 }
 
 variable "k8s_kubespray_url" {
@@ -99,46 +107,48 @@ variable "k8s_kubespray_url" {
 
 variable "k8s_kubespray_version" {
   description = "Kubespray version"
-  default     = "2.5.0"
+  default     = "2.8.2"
 }
 
 variable "k8s_version" {
   description = "Version of Kubernetes that will be deployed"
-  default     = "1.10.2"
+  default     = "1.12.5"
 }
 
-variable "k8s_master_ips" {
+variable "vm_master_ips" {
   type        = "map"
   description = "IPs used for the Kubernetes master nodes"
 }
 
-variable "k8s_worker_ips" {
+variable "vm_worker_ips" {
   type        = "map"
   description = "IPs used for the Kubernetes worker nodes"
 }
 
-variable "k8s_haproxy_ip" {
+variable "vm_haproxy_ips" {
+  type        = "map"
   description = "IP used for HAProxy"
 }
 
-variable "k8s_netmask" {
+variable "vm_netmask" {
   description = "Netmask used for the Kubernetes nodes and HAProxy (example: 24)"
 }
 
-variable "k8s_gateway" {
+variable "vm_gateway" {
   description = "Gateway for the Kubernetes nodes"
 }
 
-variable "k8s_dns" {
+variable "vm_dns" {
   description = "DNS for the Kubernetes nodes"
 }
 
-variable "k8s_domain" {
+variable "vm_domain" {
   description = "Domain for the Kubernetes nodes"
 }
 
 variable "k8s_network_plugin" {
-  description = "Kubernetes network plugin (example: weave, flannel, cilium, etc.)"
+  description = "Kubernetes network plugin (calico/canal/flannel/weave/cilium/contiv/kube-router)"
+  default = "flannel"
 }
 
 variable "k8s_weave_encryption_password" {
@@ -147,33 +157,47 @@ variable "k8s_weave_encryption_password" {
 }
 variable "k8s_dns_mode" {
   description = "Which DNS to use for the internal Kubernetes cluster name resolution (example: kubedns, coredns, etc.)"
-  default     = "kubedns"
+  default     = "coredns"
 }
 
-variable "k8s_master_cpu" {
+variable "vm_master_cpu" {
   description = "Number of vCPU for the Kubernetes master virtual machines"
 }
 
-variable "k8s_master_ram" {
+variable "vm_master_ram" {
   description = "Amount of RAM for the Kubernetes master virtual machines (example: 2048)"
 }
 
-variable "k8s_worker_cpu" {
+variable "vm_worker_cpu" {
   description = "Number of vCPU for the Kubernetes worker virtual machines"
 }
 
-variable "k8s_worker_ram" {
+variable "vm_worker_ram" {
   description = "Amount of RAM for the Kubernetes worker virtual machines (example: 2048)"
 }
 
-variable "k8s_haproxy_cpu" {
+variable "vm_haproxy_cpu" {
   description = "Number of vCPU for the HAProxy virtual machine"
 }
 
-variable "k8s_haproxy_ram" {
+variable "vm_haproxy_ram" {
   description = "Amount of RAM for the HAProxy virtual machine (example: 1024)"
 }
 
-variable "k8s_node_prefix" {
+variable "vm_name_prefix" {
   description = "Prefix for the name of the virtual machines and the hostname of the Kubernetes nodes"
+}
+
+#================#
+# Redhat account #
+#================#
+
+variable "rh_username" {
+  description = "Username of your Redhat account"
+  default = "none"
+}
+
+variable "rh_password" {
+  description = "Password of your Redhat account"
+  default = "none"
 }

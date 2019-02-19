@@ -1,0 +1,43 @@
+- hosts: haproxy
+
+  gather_facts: false
+
+  tasks:
+    - name: get os-release
+      raw: cat /etc/os-release
+      register: os_release
+      changed_when: false
+      environment: {}
+
+    - name: install python
+      raw:
+        apt-get update -q && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -q -y python
+      environment: {}
+      when: '"Ubuntu" in os_release.stdout'
+
+    - name: configure selinux
+      raw:
+        yum -q -y install policycoreutils-python && \
+        semanage port -a -t http_port_t -p tcp 6443
+      environment: {}
+      when: ("CentOS" in os_release.stdout) or ("Red Hat Enterprise Linux" in os_release.stdout)
+
+    - name: install haproxy
+      package: name=haproxy state=present
+
+    - name: configure haproxy
+      copy:
+        src: ../../config/haproxy.cfg
+        dest: /etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart haproxy
+
+    - name: start and enable haproxy
+      service: name=haproxy state=started enabled=yes
+
+  handlers:
+    - name: restart haproxy
+      service: name=haproxy state=restarted

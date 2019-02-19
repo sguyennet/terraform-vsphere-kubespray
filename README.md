@@ -3,15 +3,37 @@
 ## Requirements
 
 * Git
-* Ansible >= v2.4
-* Jinja >= 2.9
+* Ansible >= v2.6
+* Jinja >= 2.9.6
 * Python netaddr
 * Terraform
 * Internet connection on the client machine to download Kubespray.
 * Internet connection on the Kubernetes nodes to download the Kubernetes binaries.
 * vSphere environment with a vCenter. An enterprise plus license is needed if you would like to configure anti-affinity between the Kubernetes master nodes.
-* A Ubuntu 16.04 vSphere template. If linked clone is used, the template needs to have one and only one snapshot.
-* A resource pool to place the Kubernetes virtual machines.
+* A Linux vSphere template. If linked clone is used, the template needs to have one and only one snapshot(due to a current bug in the provider, the template also need to be just a power off VM and not an actual vSphere template).
+
+## Tested Linux distribution
+
+* Ubuntu LTS 16.04 (requirements: open-vm-tools package)
+* Ubuntu LTS 18.04 (requirements: open-vm-tools package)
+* CentOS 7 (requirements: open-vm-tools package, perl package, firewalld disabled)
+* Debian 9 (requirements: VMware tools, vSphere VM OS configuration set to Ubuntu x64, net-tools package)
+* RHEL 7 (requirements: VMware tools, net-tools package, firewalld disabled)
+
+## Tested Kubernetes network plugins
+
+|         |        RHEL 7      |       CentOS 7     |  Ubuntu LTS 18.04  |  Ubuntu LTS 16.04  |       Debian 9     |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| Flannel | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| Weave   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| Calico  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| Cilium  |        :x:         |        :x:         | :heavy_check_mark: |        :x:         | :heavy_check_mark: |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
+| Canal   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 
 ## Usage
 
@@ -59,9 +81,3 @@ $ vim terraform.tfvars
 Execute the terraform script to upgrade Kubernetes:
 
 $ terraform apply -var 'action=upgrade'
-
-## Network plugins
-
-* Flannel
-* Weave
-* Cilium

@@ -1,0 +1,23 @@
+- hosts: all
+
+  gather_facts: false
+
+  tasks:
+    - name: get os-release
+      raw: cat /etc/os-release
+      register: os_release
+      changed_when: false
+      environment: {}
+
+    - name: register and auto-subscribe rhel
+      redhat_subscription:
+        state: present
+        username: "{{ rh_username }}"
+        password: "{{ rh_password }}"
+        auto_attach: true
+      when: '"rhel" in os_release.stdout'
+
+    - name: enable extra rpms repository
+      rhsm_repository:
+        name: rhel-7-server-extras-rpms
+      when: '"rhel" in os_release.stdout'

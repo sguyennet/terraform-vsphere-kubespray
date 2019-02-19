@@ -3,7 +3,7 @@
 #===============================================================================
 
 provider "vsphere" {
-  version        = "1.5.0"
+  version        = "1.9.1"
   vsphere_server = "${var.vsphere_vcenter}"
   user           = "${var.vsphere_user}"
   password       = "${var.vsphere_password}"
@@ -24,11 +24,6 @@ data "vsphere_compute_cluster" "cluster" {
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
-data "vsphere_resource_pool" "pool" {
-  name          = "${var.vsphere_resource_pool}"
-  datacenter_id = "${data.vsphere_datacenter.dc.id}"
-}
-
 data "vsphere_datastore" "datastore" {
   name          = "${var.vm_datastore}"
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
@@ -45,7 +40,7 @@ data "vsphere_virtual_machine" "template" {
 }
 
 #===============================================================================
-# Templates
+# Template files
 #===============================================================================
 
 # Kubespray all.yml template #
@@ -60,7 +55,7 @@ data "template_file" "kubespray_all" {
     vsphere_datastore      = "${var.vsphere_vcp_datastore}"
     vsphere_working_dir    = "${var.vm_folder}"
     vsphere_resource_pool  = "${var.vsphere_resource_pool}"
-    loadbalancer_apiserver = "${var.k8s_haproxy_ip}"
+    loadbalancer_apiserver = "${var.vm_haproxy_ips[0]}"
   }
 }
 
@@ -76,45 +71,66 @@ data "template_file" "kubespray_k8s_cluster" {
   }
 }
 
-# Kubespray master hostname and ip list template #
-data "template_file" "kubespray_hosts_master" {
-  count    = "${length(var.k8s_master_ips)}"
-  template = "${file("templates/kubespray_hosts.tpl")}"
+# HAProxy hostname and ip list template #
+data "template_file" "haproxy_hosts" {
+  count    = "${length(var.vm_haproxy_ips)}"
+  template = "${file("templates/ansible_hosts.tpl")}"
 
   vars {
-    hostname = "${var.k8s_node_prefix}-master-${count.index}"
-    host_ip  = "${lookup(var.k8s_master_ips, count.index)}"
+    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
+    host_ip  = "${lookup(var.vm_haproxy_ips, count.index)}"
+  }
+}
+
+# Kubespray master hostname and ip list template #
+data "template_file" "kubespray_hosts_master" {
+  count    = "${length(var.vm_master_ips)}"
+  template = "${file("templates/ansible_hosts.tpl")}"
+
+  vars {
+    hostname = "${var.vm_name_prefix}-master-${count.index}"
+    host_ip  = "${lookup(var.vm_master_ips, count.index)}"
   }
 }
 
 # Kubespray worker hostname and ip list template #
 data "template_file" "kubespray_hosts_worker" {
-  count    = "${length(var.k8s_worker_ips)}"
-  template = "${file("templates/kubespray_hosts.tpl")}"
+  count    = "${length(var.vm_worker_ips)}"
+  template = "${file("templates/ansible_hosts.tpl")}"
 
   vars {
-    hostname = "${var.k8s_node_prefix}-worker-${count.index}"
-    host_ip  = "${lookup(var.k8s_worker_ips, count.index)}"
+    hostname = "${var.vm_name_prefix}-worker-${count.index}"
+    host_ip  = "${lookup(var.vm_worker_ips, count.index)}"
+  }
+}
+
+# HAProxy hostname list template #
+data "template_file" "haproxy_hosts_list" {
+  count    = "${length(var.vm_haproxy_ips)}"
+  template = "${file("templates/ansible_hosts_list.tpl")}"
+
+  vars {
+    hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
   }
 }
 
 # Kubespray master hostname list template #
 data "template_file" "kubespray_hosts_master_list" {
-  count    = "${length(var.k8s_master_ips)}"
-  template = "${file("templates/kubespray_hosts_list.tpl")}"
+  count    = "${length(var.vm_master_ips)}"
+  template = "${file("templates/ansible_hosts_list.tpl")}"
 
   vars {
-    hostname = "${var.k8s_node_prefix}-master-${count.index}"
+    hostname = "${var.vm_name_prefix}-master-${count.index}"
   }
 }
 
 # Kubespray worker hostname list template #
 data "template_file" "kubespray_hosts_worker_list" {
-  count    = "${length(var.k8s_worker_ips)}"
-  template = "${file("templates/kubespray_hosts_list.tpl")}"
+  count    = "${length(var.vm_worker_ips)}"
+  template = "${file("templates/ansible_hosts_list.tpl")}"
 
   vars {
-    hostname = "${var.k8s_node_prefix}-worker-${count.index}"
+    hostname = "${var.vm_name_prefix}-worker-${count.index}"
   }
 }
 
@@ -123,24 +139,24 @@ data "template_file" "haproxy" {
   template = "${file("templates/haproxy.tpl")}"
 
   vars {
-    bind_ip = "${var.k8s_haproxy_ip}"
+    bind_ip = "${var.vm_haproxy_ips[0]}"
   }
 }
 
 # HAProxy server backend template #
 data "template_file" "haproxy_backend" {
-  count    = "${length(var.k8s_master_ips)}"
+  count    = "${length(var.vm_master_ips)}"
   template = "${file("templates/haproxy_backend.tpl")}"
 
   vars {
-    prefix_server     = "${var.k8s_node_prefix}"
-    backend_server_ip = "${lookup(var.k8s_master_ips, count.index)}"
+    prefix_server     = "${var.vm_name_prefix}"
+    backend_server_ip = "${lookup(var.vm_master_ips, count.index)}"
     count             = "${count.index}"
   }
 }
 
 #===============================================================================
-# Local Resources
+# Local Files
 #===============================================================================
 
 # Create Kubespray all.yml configuration file from Terraform template #
@@ -157,7 +173,7 @@ resource "local_file" "kubespray_k8s_cluster" {
 
 # Create Kubespray hosts.ini configuration file from Terraform templates #
 resource "local_file" "kubespray_hosts" {
-  content  = "${join("", data.template_file.kubespray_hosts_master.*.rendered)}${join("", data.template_file.kubespray_hosts_worker.*.rendered)}\n[kube-master]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[etcd]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[kube-node]\n${join("", data.template_file.kubespray_hosts_worker_list.*.rendered)}\n[k8s-cluster:children]\nkube-master\nkube-node"
+  content  = "${join("", data.template_file.haproxy_hosts.*.rendered)}${join("", data.template_file.kubespray_hosts_master.*.rendered)}${join("", data.template_file.kubespray_hosts_worker.*.rendered)}\n[haproxy]\n${join("", data.template_file.haproxy_hosts_list.*.rendered)}\n[kube-master]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[etcd]\n${join("", data.template_file.kubespray_hosts_master_list.*.rendered)}\n[kube-node]\n${join("", data.template_file.kubespray_hosts_worker_list.*.rendered)}\n[k8s-cluster:children]\nkube-master\nkube-node"
   filename = "config/hosts.ini"
 }
 
@@ -165,6 +181,20 @@ resource "local_file" "kubespray_hosts" {
 resource "local_file" "haproxy" {
   content  = "${data.template_file.haproxy.rendered}${join("", data.template_file.haproxy_backend.*.rendered)}"
   filename = "config/haproxy.cfg"
+}
+
+#===============================================================================
+# Locals
+#===============================================================================
+
+# Extra args for ansible playbooks #
+locals {
+  extra_args = {
+    ubuntu = "-T 300"
+    debian = "-T 300 -e 'ansible_become_method=su'"
+    centos = "-T 300"
+    rhel = "-T 300"
+  }
 }
 
 #===============================================================================
@@ -184,8 +214,30 @@ resource "null_resource" "config_permission" {
 
 resource "null_resource" "kubespray_download" {
   provisioner "local-exec" {
-    command = "rm -rf kubespray && git clone --branch ${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
+    command = "cd ansible && rm -rf kubespray && git clone --branch ${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
   }
+}
+
+# Execute register and auto-subscribe RHEL Ansible playbook #
+resource "null_resource" "rhel_register" {
+  count = "${var.vm_distro == "rhel" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
+  }
+
+  depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
+}
+
+# Execute HAProxy Ansible playbook #
+resource "null_resource" "haproxy_install" {
+  count = "${var.action == "create" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/haproxy && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password}' ${lookup(local.extra_args, var.vm_distro)} -v haproxy.yml"
+  }
+
+  depends_on = ["local_file.kubespray_hosts", "local_file.haproxy", "null_resource.rhel_register", "vsphere_virtual_machine.haproxy"]
 }
 
 # Execute create Kubespray Ansible playbook #
@@ -193,10 +245,10 @@ resource "null_resource" "kubespray_create" {
   count = "${var.action == "create" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v cluster.yml -e kube_version=${var.k8s_version}"
+    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} kube_version=${var.k8s_version}' ${lookup(local.extra_args, var.vm_distro)} -v cluster.yml"
   }
 
-  depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
+  depends_on = ["local_file.kubespray_hosts", "null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "null_resource.haproxy_install", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
 }
 
 # Execute scale Kubespray Ansible playbook #
@@ -204,10 +256,10 @@ resource "null_resource" "kubespray_add" {
   count = "${var.action == "add_worker" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v scale.yml -e kube_version=${var.k8s_version}"
+    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} kube_version=${var.k8s_version}' ${lookup(local.extra_args, var.vm_distro)} -v scale.yml"
   }
 
-  depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
+  depends_on = ["local_file.kubespray_hosts", "null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "null_resource.haproxy_install", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
 }
 
 # Execute upgrade Kubespray Ansible playbook #
@@ -215,20 +267,20 @@ resource "null_resource" "kubespray_upgrade" {
   count = "${var.action == "upgrade" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd kubespray && ansible-playbook -i ../config/hosts.ini -b -u ${var.vm_user} -v upgrade-cluster.yml -e kube_version=${var.k8s_version}"
+    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} kube_version=${var.k8s_version}' ${lookup(local.extra_args, var.vm_distro)} -v upgrade-cluster.yml"
   }
 
-  depends_on = ["null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "local_file.kubespray_hosts", "vsphere_virtual_machine.master", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.haproxy"]
+  depends_on = ["local_file.kubespray_hosts", "null_resource.kubespray_download", "local_file.kubespray_all", "local_file.kubespray_k8s_cluster", "null_resource.haproxy_install", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
 }
 
 # Create the local admin.conf kubectl configuration file #
 resource "null_resource" "kubectl_configuration" {
   provisioner "local-exec" {
-    command = "ansible -i ${lookup(var.k8s_master_ips, 0)}, -b -u ${var.vm_user} -m fetch -a 'src=/etc/kubernetes/admin.conf dest=config/admin.conf flat=yes' all"
+    command = "ansible -i ${lookup(var.vm_master_ips, 0)}, -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password}' ${lookup(local.extra_args, var.vm_distro)} -m fetch -a 'src=/etc/kubernetes/admin.conf dest=config/admin.conf flat=yes' all"
   }
 
   provisioner "local-exec" {
-    command = "sed -i 's/lb-apiserver.kubernetes.local/${var.k8s_haproxy_ip}/g' config/admin.conf"
+    command = "sed -i 's/lb-apiserver.kubernetes.local/${var.vm_haproxy_ips[0]}/g' config/admin.conf"
   }
 
   provisioner "local-exec" {
@@ -249,16 +301,22 @@ resource "vsphere_folder" "folder" {
   datacenter_id = "${data.vsphere_datacenter.dc.id}"
 }
 
+# Create a resource pool for the Kubernetes VMs #
+resource "vsphere_resource_pool" "resource_pool" {
+  name                    = "${var.vsphere_resource_pool}"
+  parent_resource_pool_id = "${data.vsphere_compute_cluster.cluster.resource_pool_id}"
+}
+
 # Create the Kubernetes master VMs #
 resource "vsphere_virtual_machine" "master" {
-  count            = "${length(var.k8s_master_ips)}"
-  name             = "${var.k8s_node_prefix}-master-${count.index}"
-  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  count            = "${length(var.vm_master_ips)}"
+  name             = "${var.vm_name_prefix}-master-${count.index}"
+  resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
-  num_cpus         = "${var.k8s_master_cpu}"
-  memory           = "${var.k8s_master_ram}"
+  num_cpus         = "${var.vm_master_cpu}"
+  memory           = "${var.vm_master_ram}"
   guest_id         = "${data.vsphere_virtual_machine.template.guest_id}"
   enable_disk_uuid = "true"
 
@@ -268,7 +326,7 @@ resource "vsphere_virtual_machine" "master" {
   }
 
   disk {
-    label            = "${var.k8s_node_prefix}-master-${count.index}.vmdk"
+    label            = "${var.vm_name_prefix}-master-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -280,31 +338,18 @@ resource "vsphere_virtual_machine" "master" {
 
     customize {
       linux_options {
-        host_name = "${var.k8s_node_prefix}-${count.index}"
-        domain    = "${var.k8s_domain}"
+        host_name = "${var.vm_name_prefix}-${count.index}"
+        domain    = "${var.vm_domain}"
       }
 
       network_interface {
-        ipv4_address = "${lookup(var.k8s_master_ips, count.index)}"
-        ipv4_netmask = "${var.k8s_netmask}"
+        ipv4_address = "${lookup(var.vm_master_ips, count.index)}"
+        ipv4_netmask = "${var.vm_netmask}"
       }
 
-      ipv4_gateway    = "${var.k8s_gateway}"
-      dns_server_list = ["${var.k8s_dns}"]
+      ipv4_gateway    = "${var.vm_gateway}"
+      dns_server_list = ["${var.vm_dns}"]
     }
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      type     = "ssh"
-      user     = "${var.vm_user}"
-      password = "${var.vm_password}"
-    }
-
-    inline = [
-      "sudo swapoff -a",
-      "sudo sed -i '/ swap / s/^/#/' /etc/fstab",
-    ]
   }
 
   depends_on = ["vsphere_virtual_machine.haproxy"]
@@ -313,21 +358,23 @@ resource "vsphere_virtual_machine" "master" {
 # Create anti affinity rule for the Kubernetes master VMs #
 resource "vsphere_compute_cluster_vm_anti_affinity_rule" "master_anti_affinity_rule" {
   count               = "${var.vsphere_enable_anti_affinity == "true" ? 1 : 0}"
-  name                = "${var.k8s_node_prefix}-master-anti-affinity-rule"
+  name                = "${var.vm_name_prefix}-master-anti-affinity-rule"
   compute_cluster_id  = "${data.vsphere_compute_cluster.cluster.id}"
   virtual_machine_ids = ["${vsphere_virtual_machine.master.*.id}"]
+
+  depends_on = ["vsphere_virtual_machine.master"]
 }
 
 # Create the Kubernetes worker VMs #
 resource "vsphere_virtual_machine" "worker" {
-  count            = "${length(var.k8s_worker_ips)}"
-  name             = "${var.k8s_node_prefix}-worker-${count.index}"
-  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  count            = "${length(var.vm_worker_ips)}"
+  name             = "${var.vm_name_prefix}-worker-${count.index}"
+  resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
-  num_cpus         = "${var.k8s_worker_cpu}"
-  memory           = "${var.k8s_worker_ram}"
+  num_cpus         = "${var.vm_worker_cpu}"
+  memory           = "${var.vm_worker_ram}"
   guest_id         = "${data.vsphere_virtual_machine.template.guest_id}"
   enable_disk_uuid = "true"
 
@@ -337,7 +384,7 @@ resource "vsphere_virtual_machine" "worker" {
   }
 
   disk {
-    label            = "${var.k8s_node_prefix}-worker-${count.index}.vmdk"
+    label            = "${var.vm_name_prefix}-worker-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -349,41 +396,28 @@ resource "vsphere_virtual_machine" "worker" {
 
     customize {
       linux_options {
-        host_name = "${var.k8s_node_prefix}-worker-${count.index}"
-        domain    = "${var.k8s_domain}"
+        host_name = "${var.vm_name_prefix}-worker-${count.index}"
+        domain    = "${var.vm_domain}"
       }
 
       network_interface {
-        ipv4_address = "${lookup(var.k8s_worker_ips, count.index)}"
-        ipv4_netmask = "${var.k8s_netmask}"
+        ipv4_address = "${lookup(var.vm_worker_ips, count.index)}"
+        ipv4_netmask = "${var.vm_netmask}"
       }
 
-      ipv4_gateway    = "${var.k8s_gateway}"
-      dns_server_list = ["${var.k8s_dns}"]
+      ipv4_gateway    = "${var.vm_gateway}"
+      dns_server_list = ["${var.vm_dns}"]
     }
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      type     = "ssh"
-      user     = "${var.vm_user}"
-      password = "${var.vm_password}"
-    }
-
-    inline = [
-      "sudo swapoff -a",
-      "sudo sed -i '/ swap / s/^/#/' /etc/fstab",
-    ]
   }
 
   provisioner "local-exec" {
     when    = "destroy"
-    command = "sed 's/${var.k8s_node_prefix}-worker-[0-9]*$//' config/hosts.ini > config/hosts_remove_${count.index}.ini && sed -i '1 i\\${var.k8s_node_prefix}-worker-${count.index}\\ ansible_host=${self.default_ip_address}' config/hosts_remove_${count.index}.ini && sed -i 's/\\[kube-node\\]/\\[kube-node\\]\\n${var.k8s_node_prefix}-worker-${count.index}/' config/hosts_remove_${count.index}.ini"
+    command = "sed 's/${var.vm_name_prefix}-worker-[0-9]*$//' config/hosts.ini > config/hosts_remove_${count.index}.ini && sed -i '1 i\\${var.vm_name_prefix}-worker-${count.index}\\ ansible_host=${self.default_ip_address}' config/hosts_remove_${count.index}.ini && sed -i 's/\\[kube-node\\]/\\[kube-node\\]\\n${var.vm_name_prefix}-worker-${count.index}/' config/hosts_remove_${count.index}.ini"
   }
 
   provisioner "local-exec" {
     when    = "destroy"
-    command = "cd kubespray && ansible-playbook -i ../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'delete_nodes_confirmation=yes' -v remove-node.yml"
+    command = "cd ansible/kubespray && ansible-playbook -i ../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} delete_nodes_confirmation=yes' -v remove-node.yml"
   }
 
   provisioner "local-exec" {
@@ -396,13 +430,13 @@ resource "vsphere_virtual_machine" "worker" {
 
 # Create the HAProxy load balancer VM #
 resource "vsphere_virtual_machine" "haproxy" {
-  name             = "${var.k8s_node_prefix}-haproxy"
-  resource_pool_id = "${data.vsphere_resource_pool.pool.id}"
+  name             = "${var.vm_name_prefix}-haproxy"
+  resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
 
-  num_cpus = "${var.k8s_haproxy_cpu}"
-  memory   = "${var.k8s_haproxy_ram}"
+  num_cpus = "${var.vm_haproxy_cpu}"
+  memory   = "${var.vm_haproxy_ram}"
   guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
 
   network_interface {
@@ -411,7 +445,7 @@ resource "vsphere_virtual_machine" "haproxy" {
   }
 
   disk {
-    label            = "${var.k8s_node_prefix}-haproxy.vmdk"
+    label            = "${var.vm_name_prefix}-haproxy.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -423,43 +457,17 @@ resource "vsphere_virtual_machine" "haproxy" {
 
     customize {
       linux_options {
-        host_name = "${var.k8s_node_prefix}-haproxy"
-        domain    = "${var.k8s_domain}"
+        host_name = "${var.vm_name_prefix}-haproxy"
+        domain    = "${var.vm_domain}"
       }
 
       network_interface {
-        ipv4_address = "${var.k8s_haproxy_ip}"
-        ipv4_netmask = "${var.k8s_netmask}"
+        ipv4_address = "${var.vm_haproxy_ips[0]}"
+        ipv4_netmask = "${var.vm_netmask}"
       }
 
-      ipv4_gateway    = "${var.k8s_gateway}"
-      dns_server_list = ["${var.k8s_dns}"]
+      ipv4_gateway    = "${var.vm_gateway}"
+      dns_server_list = ["${var.vm_dns}"]
     }
-  }
-
-  provisioner "file" {
-    connection {
-      type     = "ssh"
-      user     = "${var.vm_user}"
-      password = "${var.vm_password}"
-    }
-
-    source      = "config/haproxy.cfg"
-    destination = "/tmp/haproxy.cfg"
-  }
-
-  provisioner "remote-exec" {
-    connection {
-      type     = "ssh"
-      user     = "${var.vm_user}"
-      password = "${var.vm_password}"
-    }
-
-    inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y haproxy",
-      "sudo mv /tmp/haproxy.cfg /etc/haproxy",
-      "sudo systemctl restart haproxy",
-    ]
   }
 }
