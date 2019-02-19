@@ -23,17 +23,11 @@
 ## Tested Kubernetes network plugins
 
 |         |        RHEL 7      |       CentOS 7     |  Ubuntu LTS 18.04  |  Ubuntu LTS 16.04  |       Debian 9     |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 | Flannel | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 | Weave   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 | Calico  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 | Cilium  |        :x:         |        :x:         | :heavy_check_mark: |        :x:         | :heavy_check_mark: |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 | Canal   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-|---------|--------------------|--------------------|--------------------|--------------------|--------------------|
 
 ## Usage
 

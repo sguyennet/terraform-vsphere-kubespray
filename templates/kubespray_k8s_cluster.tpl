@@ -20,9 +20,12 @@ kube_api_anonymous_auth: true
 
 ## Change this to use another Kubernetes version, e.g. a current beta release
 kube_version: ${kube_version}
+<<<<<<< HEAD
 
 # kubernetes image repo define
 kube_image_repo: "gcr.io/google-containers"
+=======
+>>>>>>> 95c89fd1647f7fdeb61ee80ebdac79f295b98edb
 
 # Where the binaries will be downloaded.
 # Note: ensure that you've enough disk space (about 1G)
