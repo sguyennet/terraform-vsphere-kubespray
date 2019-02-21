@@ -125,9 +125,13 @@ variable "vm_worker_ips" {
   description = "IPs used for the Kubernetes worker nodes"
 }
 
+variable "vm_haproxy_vip" {
+  description = "IP used for the HAProxy floating VIP"
+}
+
 variable "vm_haproxy_ips" {
   type        = "map"
-  description = "IP used for HAProxy"
+  description = "IP used for two HAProxy virtual machine"
 }
 
 variable "vm_netmask" {

@@ -55,7 +55,7 @@ data "template_file" "kubespray_all" {
     vsphere_datastore      = "${var.vsphere_vcp_datastore}"
     vsphere_working_dir    = "${var.vm_folder}"
     vsphere_resource_pool  = "${var.vsphere_resource_pool}"
-    loadbalancer_apiserver = "${var.vm_haproxy_ips[0]}"
+    loadbalancer_apiserver = "${var.vm_haproxy_vip}"
   }
 }
 
@@ -139,7 +139,7 @@ data "template_file" "haproxy" {
   template = "${file("templates/haproxy.tpl")}"
 
   vars {
-    bind_ip = "${var.vm_haproxy_ips[0]}"
+    bind_ip = "${var.vm_haproxy_vip}"
   }
 }
 
@@ -152,6 +152,24 @@ data "template_file" "haproxy_backend" {
     prefix_server     = "${var.vm_name_prefix}"
     backend_server_ip = "${lookup(var.vm_master_ips, count.index)}"
     count             = "${count.index}"
+  }
+}
+
+# Keepalived master template #
+data "template_file" "keepalived_master" {
+  template = "${file("templates/keepalived_master.tpl")}"
+
+  vars {
+    virtual_ip = "${var.vm_haproxy_vip}"
+  }
+}
+
+# Keepalived slave template #
+data "template_file" "keepalived_slave" {
+  template = "${file("templates/keepalived_slave.tpl")}"
+
+  vars {
+    virtual_ip = "${var.vm_haproxy_vip}"
   }
 }
 
@@ -181,6 +199,18 @@ resource "local_file" "kubespray_hosts" {
 resource "local_file" "haproxy" {
   content  = "${data.template_file.haproxy.rendered}${join("", data.template_file.haproxy_backend.*.rendered)}"
   filename = "config/haproxy.cfg"
+}
+
+# Create Keepalived master configuration from Terraform templates #
+resource "local_file" "keepalived_master" {
+  content  = "${data.template_file.keepalived_master.rendered}"
+  filename = "config/keepalived-master.cfg"
+}
+
+# Create Keepalived slave configuration from Terraform templates #
+resource "local_file" "keepalived_slave" {
+  content  = "${data.template_file.keepalived_slave.rendered}"
+  filename = "config/keepalived-slave.cfg"
 }
 
 #===============================================================================
@@ -280,7 +310,7 @@ resource "null_resource" "kubectl_configuration" {
   }
 
   provisioner "local-exec" {
-    command = "sed -i 's/lb-apiserver.kubernetes.local/${var.vm_haproxy_ips[0]}/g' config/admin.conf"
+    command = "sed -i 's/lb-apiserver.kubernetes.local/${var.vm_haproxy_vip}/g' config/admin.conf"
   }
 
   provisioner "local-exec" {
@@ -430,7 +460,8 @@ resource "vsphere_virtual_machine" "worker" {
 
 # Create the HAProxy load balancer VM #
 resource "vsphere_virtual_machine" "haproxy" {
-  name             = "${var.vm_name_prefix}-haproxy"
+  count            = "${length(var.vm_haproxy_ips)}"
+  name             = "${var.vm_name_prefix}-haproxy-${count.index}"
   resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
@@ -445,7 +476,7 @@ resource "vsphere_virtual_machine" "haproxy" {
   }
 
   disk {
-    label            = "${var.vm_name_prefix}-haproxy.vmdk"
+    label            = "${var.vm_name_prefix}-haproxy-${count.index}.vmdk"
     size             = "${data.vsphere_virtual_machine.template.disks.0.size}"
     eagerly_scrub    = "${data.vsphere_virtual_machine.template.disks.0.eagerly_scrub}"
     thin_provisioned = "${data.vsphere_virtual_machine.template.disks.0.thin_provisioned}"
@@ -457,12 +488,12 @@ resource "vsphere_virtual_machine" "haproxy" {
 
     customize {
       linux_options {
-        host_name = "${var.vm_name_prefix}-haproxy"
+        host_name = "${var.vm_name_prefix}-haproxy-${count.index}"
         domain    = "${var.vm_domain}"
       }
 
       network_interface {
-        ipv4_address = "${var.vm_haproxy_ips[0]}"
+        ipv4_address = "${lookup(var.vm_haproxy_ips, count.index)}"
         ipv4_netmask = "${var.vm_netmask}"
       }
 

@@ -113,9 +113,13 @@ vm_haproxy_cpu = "1"
 # The amount of RAM allocated to the load balancer virtual machine #
 vm_haproxy_ram = "1024"
 
+# The IP address of the load balancer floating VIP #
+vm_haproxy_vip = ""
+
 # The IP address of the load balancer virtual machine #
 vm_haproxy_ips = {
   "0" = ""
+  "1" = ""
 }
 
 #===============================================================================
@@ -134,15 +138,15 @@ rh_password = ""
 k8s_kubespray_url = "https://github.com/kubernetes-sigs/kubespray.git"
 
 # The version of Kubespray that will be used to deploy Kubernetes #
-k8s_kubespray_version = "v2.8.3"
+k8s_kubespray_version = "v2.8.2"
 
 # The Kubernetes version that will be deployed #
 k8s_version = "v1.12.5"
 
-# The overlay network plugin used by the Kubernetes cluster (flannel/weave/calico/canal/cilium)#
-k8s_network_plugin = ""
+# The overlay network plugin used by the Kubernetes cluster #
+k8s_network_plugin = "calico"
 
-# If you use Weavenet as an overlay network, you need to specify an encryption password (leave empty for no encryption)#
+# If you use Weavenet as an overlay network, you need to specify an encryption password #
 k8s_weave_encryption_password = ""
 
 # The DNS service used by the Kubernetes cluster (coredns/kubedns) #

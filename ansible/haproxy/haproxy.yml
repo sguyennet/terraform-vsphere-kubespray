@@ -23,6 +23,39 @@
       environment: {}
       when: ("CentOS" in os_release.stdout) or ("Red Hat Enterprise Linux" in os_release.stdout)
 
+    - name: allow binding non-local ip
+      sysctl:
+        name: net.ipv4.ip_nonlocal_bind
+        value: 1
+        reload: true
+        state: present
+
+    - name: install keepalived
+      package: name=keepalived state=present
+
+    - name: configure keepalived master
+      copy:
+        src: ../../config/keepalived-master.cfg
+        dest: /etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart keepalived
+      when: '"haproxy-0" in inventory_hostname'
+
+    - name: configure keepalived slave
+      copy:
+        src: ../../config/keepalived-slave.cfg
+        dest: /etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: 0644
+      notify: restart keepalived
+      when: '"haproxy-1" in inventory_hostname'
+
+    - name: start and enable keepalived
+      service: name=keepalived state=started enabled=yes
+
     - name: install haproxy
       package: name=haproxy state=present
 
@@ -41,3 +74,6 @@
   handlers:
     - name: restart haproxy
       service: name=haproxy state=restarted
+
+    - name: restart keepalived
+      service: name=keepalived state=restarted
