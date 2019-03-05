@@ -259,6 +259,17 @@ resource "null_resource" "rhel_register" {
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
 }
 
+# Execute register and auto-subscribe RHEL Ansible playbook when a node is added#
+resource "null_resource" "rhel_register_kubespray_add" {
+  count = "${var.vm_distro == "rhel" && var.action == "add_worker" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
+  }
+
+  depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.worker"]
+}
+
 # Execute HAProxy Ansible playbook #
 resource "null_resource" "haproxy_install" {
   count = "${var.action == "create" ? 1 : 0}"
@@ -367,6 +378,8 @@ resource "vsphere_virtual_machine" "master" {
     linked_clone  = "${var.vm_linked_clone}"
 
     customize {
+      timeout = "20"
+
       linux_options {
         host_name = "${var.vm_name_prefix}-${count.index}"
         domain    = "${var.vm_domain}"
@@ -425,6 +438,8 @@ resource "vsphere_virtual_machine" "worker" {
     linked_clone  = "${var.vm_linked_clone}"
 
     customize {
+      timeout = "20"
+
       linux_options {
         host_name = "${var.vm_name_prefix}-worker-${count.index}"
         domain    = "${var.vm_domain}"
@@ -487,6 +502,8 @@ resource "vsphere_virtual_machine" "haproxy" {
     linked_clone  = "${var.vm_linked_clone}"
 
     customize {
+      timeout = "20"
+
       linux_options {
         host_name = "${var.vm_name_prefix}-haproxy-${count.index}"
         domain    = "${var.vm_domain}"
