@@ -1,0 +1,18 @@
+- hosts: all
+
+  gather_facts: false
+
+  tasks:
+    - name: get os-release
+      raw: cat /etc/os-release
+      register: os_release
+      changed_when: false
+      environment: {}
+
+    - name: disable firewalld
+      systemd: name=firewalld enabled=no
+      when: ("CentOS" in os_release.stdout) or ("Red Hat Enterprise Linux" in os_release.stdout)
+
+    - name: stop firewalld
+      systemd: name=firewalld state=stopped
+      when: ("CentOS" in os_release.stdout) or ("Red Hat Enterprise Linux" in os_release.stdout)

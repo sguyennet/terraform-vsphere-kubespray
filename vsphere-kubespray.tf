@@ -270,6 +270,28 @@ resource "null_resource" "rhel_register_kubespray_add" {
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.worker"]
 }
 
+# Execute firewalld RHEL Ansible playbook #
+resource "null_resource" "rhel_firewalld" {
+  count = "${var.vm_distro == "rhel" || var.vm_distro == "centos" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
+  }
+
+  depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
+}
+
+# Execute firewall RHEL Ansible playbook when a node is added#
+resource "null_resource" "rhel_firewalld_kubespray_add" {
+  count = "${var.vm_distro == "rhel" || var.vm_distro == "centos" && var.action == "add_worker" ? 1 : 0}"
+
+  provisioner "local-exec" {
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
+  }
+
+  depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.worker"]
+}
+
 # Execute HAProxy Ansible playbook #
 resource "null_resource" "haproxy_install" {
   count = "${var.action == "create" ? 1 : 0}"
@@ -278,7 +300,7 @@ resource "null_resource" "haproxy_install" {
     command = "cd ansible/haproxy && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password}' ${lookup(local.extra_args, var.vm_distro)} -v haproxy.yml"
   }
 
-  depends_on = ["local_file.kubespray_hosts", "local_file.haproxy", "null_resource.rhel_register", "vsphere_virtual_machine.haproxy"]
+  depends_on = ["local_file.kubespray_hosts", "local_file.haproxy", "null_resource.rhel_register", "null_resource.rhel_firewalld", "vsphere_virtual_machine.haproxy"]
 }
 
 # Execute create Kubespray Ansible playbook #
