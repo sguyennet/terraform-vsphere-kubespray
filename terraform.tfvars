@@ -127,6 +127,8 @@ vm_haproxy_ips = {
 #===============================================================================
 
 # If you use RHEL 7 as a base distro, you need to specify your subscription account #
+rh_subscription_server = "subscription.rhsm.redhat.com"
+rh_unverified_ssl = "false"
 rh_username = ""
 rh_password = ""
 

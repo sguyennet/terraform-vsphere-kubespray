@@ -12,6 +12,8 @@
     - name: register and auto-subscribe rhel
       redhat_subscription:
         state: present
+        server_hostname: "{{ rh_subscription_server }}"
+        server_insecure: "{{ rh_unverified_ssl }}"
         username: "{{ rh_username }}"
         password: "{{ rh_password }}"
         auto_attach: true

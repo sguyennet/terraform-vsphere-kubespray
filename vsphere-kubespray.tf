@@ -253,7 +253,7 @@ resource "null_resource" "rhel_register" {
   count = "${var.vm_distro == "rhel" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password} rh_subscription_server=${var.rh_subscription_server} rh_unverified_ssl=${var.rh_unverified_ssl}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
   }
 
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
@@ -264,7 +264,7 @@ resource "null_resource" "rhel_register_kubespray_add" {
   count = "${var.vm_distro == "rhel" && var.action == "add_worker" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password} rh_subscription_server=${var.rh_subscription_server} rh_unverified_ssl=${var.rh_unverified_ssl}' ${lookup(local.extra_args, var.vm_distro)} -v register.yml"
   }
 
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.worker"]
@@ -275,7 +275,7 @@ resource "null_resource" "rhel_firewalld" {
   count = "${var.vm_distro == "rhel" || var.vm_distro == "centos" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
   }
 
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.haproxy", "vsphere_virtual_machine.worker", "vsphere_virtual_machine.master"]
@@ -286,7 +286,7 @@ resource "null_resource" "rhel_firewalld_kubespray_add" {
   count = "${var.vm_distro == "rhel" || var.vm_distro == "centos" && var.action == "add_worker" ? 1 : 0}"
 
   provisioner "local-exec" {
-    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} rh_username=${var.rh_username} rh_password=${var.rh_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
+    command = "cd ansible/rhel && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password}' ${lookup(local.extra_args, var.vm_distro)} -v firewalld.yml"
   }
 
   depends_on = ["local_file.kubespray_hosts", "vsphere_virtual_machine.worker"]
@@ -403,7 +403,7 @@ resource "vsphere_virtual_machine" "master" {
       timeout = "20"
 
       linux_options {
-        host_name = "${var.vm_name_prefix}-${count.index}"
+        host_name = "${var.vm_name_prefix}-master-${count.index}"
         domain    = "${var.vm_domain}"
       }
 

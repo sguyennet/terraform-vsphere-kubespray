@@ -196,6 +196,16 @@ variable "vm_name_prefix" {
 # Redhat account #
 #================#
 
+variable "rh_subscription_server" {
+  description = "Address of the Redhat subscription server"
+  default = "subscription.rhsm.redhat.com"
+}
+
+variable "rh_unverified_ssl" {
+  description = "Disable the Redhat subscription server certificate verification"
+  default = "false"
+}
+
 variable "rh_username" {
   description = "Username of your Redhat account"
   default = "none"
