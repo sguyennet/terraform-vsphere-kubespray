@@ -15,7 +15,7 @@
 ## Tested Linux distribution
 
 * Ubuntu LTS 16.04 (requirements: open-vm-tools package)
-* Ubuntu LTS 18.04 (requirements: open-vm-tools package)
+* Ubuntu LTS 18.04 (requirements: VMware tools)
 * CentOS 7 (requirements: open-vm-tools package, perl package)
 * Debian 9 (requirements: VMware tools, vSphere VM OS configuration set to Ubuntu x64, net-tools package)
 * RHEL 7 (requirements: VMware tools, net-tools package)
