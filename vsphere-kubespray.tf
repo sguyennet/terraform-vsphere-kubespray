@@ -484,7 +484,7 @@ resource "vsphere_virtual_machine" "worker" {
 
   provisioner "local-exec" {
     when    = "destroy"
-    command = "cd ansible/kubespray && ansible-playbook -i ../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} delete_nodes_confirmation=yes' -v remove-node.yml"
+    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} delete_nodes_confirmation=yes' -v remove-node.yml"
   }
 
   provisioner "local-exec" {
