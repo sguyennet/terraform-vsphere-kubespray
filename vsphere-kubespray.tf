@@ -329,6 +329,14 @@ resource "null_resource" "kubespray_add" {
 resource "null_resource" "kubespray_upgrade" {
   count = "${var.action == "upgrade" ? 1 : 0}"
 
+  triggers {
+        ts = "${timestamp()}"
+  }
+
+  provisioner "local-exec" {
+    command = "cd ansible && rm -rf kubespray && git clone --branch ${var.k8s_kubespray_version} ${var.k8s_kubespray_url}"
+  }
+
   provisioner "local-exec" {
     command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} kube_version=${var.k8s_version}' ${lookup(local.extra_args, var.vm_distro)} -v upgrade-cluster.yml"
   }
