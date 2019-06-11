@@ -3,10 +3,10 @@
 ## Requirements
 
 * Git
-* Ansible >= v2.6
+* Ansible v2.6 or v2.7
 * Jinja >= 2.9.6
 * Python netaddr
-* Terraform
+* Terraform v0.11
 * Internet connection on the client machine to download Kubespray.
 * Internet connection on the Kubernetes nodes to download the Kubernetes binaries.
 * vSphere environment with a vCenter. An enterprise plus license is needed if you would like to configure anti-affinity between the Kubernetes master nodes.
