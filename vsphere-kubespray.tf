@@ -493,12 +493,13 @@ resource "vsphere_virtual_machine" "worker" {
   provisioner "local-exec" {
     when    = "destroy"
     command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e 'ansible_ssh_pass=${var.vm_password} ansible_become_pass=${var.vm_privilege_password} delete_nodes_confirmation=yes' -v remove-node.yml"
+    on_failure = "continue"
   }
 
   provisioner "local-exec" {
     when    = "destroy"
     command = "rm config/hosts_remove_${count.index}.ini"
-  }
+ }
 
   depends_on = ["vsphere_virtual_machine.master", "local_file.kubespray_hosts", "local_file.kubespray_k8s_cluster", "local_file.kubespray_all"]
 }
