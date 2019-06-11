@@ -3,10 +3,10 @@
 ## Requirements
 
 * Git
-* Ansible >= v2.6
+* Ansible v2.6 or v2.7
 * Jinja >= 2.9.6
 * Python netaddr
-* Terraform
+* Terraform v0.11
 * Internet connection on the client machine to download Kubespray.
 * Internet connection on the Kubernetes nodes to download the Kubernetes binaries.
 * vSphere environment with a vCenter. An enterprise plus license is needed if you would like to configure anti-affinity between the Kubernetes master nodes.
@@ -69,9 +69,18 @@ $ terraform apply -var 'action=remove\_worker'
 
 ### Upgrade Kubernetes
 
-Modify the k8s_version variable:
+Modify the k8s_version and the k8s_kubespray_version variables:
 
 $ vim terraform.tfvars
+
+| Kubernetes version | Kubespray version |
+|:------------------:|:-----------------:|
+|      v1.14.3       |      v2.10.3      |
+|      v1.14.1       |      v2.10.0      |
+|      v1.13.5       |      v2.9.0       |
+|      v1.12.5       |      v2.8.2       |
+|      v1.12.4       |      v2.8.1       |
+|      v1.12.3       |      v2.8.0       |
 
 Execute the terraform script to upgrade Kubernetes:
 
