@@ -71,6 +71,7 @@ variable "vm_user" {
 variable "vm_password" {
   description = "SSH password for the vSphere virtual machines"
 }
+
 variable "vm_privilege_password" {
   description = "Sudo or su password for the vSphere virtual machines"
 }
@@ -97,7 +98,7 @@ variable "vm_folder" {
 
 variable "vm_linked_clone" {
   description = "Use linked clone to create the vSphere virtual machines from the template (true/false). If you would like to use the linked clone feature, your template need to have one and only one snapshot"
-  default = "false"
+  default     = "false"
 }
 
 variable "k8s_kubespray_url" {
@@ -152,13 +153,14 @@ variable "vm_domain" {
 
 variable "k8s_network_plugin" {
   description = "Kubernetes network plugin (calico/canal/flannel/weave/cilium/contiv/kube-router)"
-  default = "flannel"
+  default     = "flannel"
 }
 
 variable "k8s_weave_encryption_password" {
   description = "Weave network encyption password "
   default     = ""
 }
+
 variable "k8s_dns_mode" {
   description = "Which DNS to use for the internal Kubernetes cluster name resolution (example: kubedns, coredns, etc.)"
   default     = "coredns"
@@ -198,20 +200,20 @@ variable "vm_name_prefix" {
 
 variable "rh_subscription_server" {
   description = "Address of the Redhat subscription server"
-  default = "subscription.rhsm.redhat.com"
+  default     = "subscription.rhsm.redhat.com"
 }
 
 variable "rh_unverified_ssl" {
   description = "Disable the Redhat subscription server certificate verification"
-  default = "false"
+  default     = "false"
 }
 
 variable "rh_username" {
   description = "Username of your Redhat account"
-  default = "none"
+  default     = "none"
 }
 
 variable "rh_password" {
   description = "Password of your Redhat account"
-  default = "none"
+  default     = "none"
 }
