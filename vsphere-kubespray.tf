@@ -46,7 +46,7 @@ data "vsphere_virtual_machine" "template" {
 data "template_file" "kubespray_all" {
   template = "${file("templates/kubespray_all.tpl")}"
 
-  vars {
+  vars = {
     vsphere_vcenter_ip     = "${var.vsphere_vcenter}"
     vsphere_user           = "${var.vsphere_vcp_user}"
     vsphere_password       = "${var.vsphere_vcp_password}"
@@ -62,7 +62,7 @@ data "template_file" "kubespray_all" {
 data "template_file" "kubespray_k8s_cluster" {
   template = "${file("templates/kubespray_k8s_cluster.tpl")}"
 
-  vars {
+  vars = {
     kube_version        = "${var.k8s_version}"
     kube_network_plugin = "${var.k8s_network_plugin}"
     weave_password      = "${var.k8s_weave_encryption_password}"
@@ -75,7 +75,7 @@ data "template_file" "haproxy_hosts" {
   count    = "${length(var.vm_haproxy_ips)}"
   template = "${file("templates/ansible_hosts.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
     host_ip  = "${lookup(var.vm_haproxy_ips, count.index)}"
   }
@@ -86,7 +86,7 @@ data "template_file" "kubespray_hosts_master" {
   count    = "${length(var.vm_master_ips)}"
   template = "${file("templates/ansible_hosts.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-master-${count.index}"
     host_ip  = "${lookup(var.vm_master_ips, count.index)}"
   }
@@ -97,7 +97,7 @@ data "template_file" "kubespray_hosts_worker" {
   count    = "${length(var.vm_worker_ips)}"
   template = "${file("templates/ansible_hosts.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-worker-${count.index}"
     host_ip  = "${lookup(var.vm_worker_ips, count.index)}"
   }
@@ -108,7 +108,7 @@ data "template_file" "haproxy_hosts_list" {
   count    = "${length(var.vm_haproxy_ips)}"
   template = "${file("templates/ansible_hosts_list.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-haproxy-${count.index}"
   }
 }
@@ -118,7 +118,7 @@ data "template_file" "kubespray_hosts_master_list" {
   count    = "${length(var.vm_master_ips)}"
   template = "${file("templates/ansible_hosts_list.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-master-${count.index}"
   }
 }
@@ -128,7 +128,7 @@ data "template_file" "kubespray_hosts_worker_list" {
   count    = "${length(var.vm_worker_ips)}"
   template = "${file("templates/ansible_hosts_list.tpl")}"
 
-  vars {
+  vars = {
     hostname = "${var.vm_name_prefix}-worker-${count.index}"
   }
 }
@@ -137,7 +137,7 @@ data "template_file" "kubespray_hosts_worker_list" {
 data "template_file" "haproxy" {
   template = "${file("templates/haproxy.tpl")}"
 
-  vars {
+  vars = {
     bind_ip = "${var.vm_haproxy_vip}"
   }
 }
@@ -147,7 +147,7 @@ data "template_file" "haproxy_backend" {
   count    = "${length(var.vm_master_ips)}"
   template = "${file("templates/haproxy_backend.tpl")}"
 
-  vars {
+  vars = {
     prefix_server     = "${var.vm_name_prefix}"
     backend_server_ip = "${lookup(var.vm_master_ips, count.index)}"
     count             = "${count.index}"
@@ -158,7 +158,7 @@ data "template_file" "haproxy_backend" {
 data "template_file" "keepalived_master" {
   template = "${file("templates/keepalived_master.tpl")}"
 
-  vars {
+  vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
   }
 }
@@ -167,7 +167,7 @@ data "template_file" "keepalived_master" {
 data "template_file" "keepalived_slave" {
   template = "${file("templates/keepalived_slave.tpl")}"
 
-  vars {
+  vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
   }
 }
@@ -365,7 +365,7 @@ resource "null_resource" "kubespray_add" {
 resource "null_resource" "kubespray_upgrade" {
   count = "${var.action == "upgrade" ? 1 : 0}"
 
-  triggers {
+  triggers = {
     ts = "${timestamp()}"
   }
 
