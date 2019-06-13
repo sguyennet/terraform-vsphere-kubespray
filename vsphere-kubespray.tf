@@ -533,16 +533,12 @@ resource "vsphere_virtual_machine" "worker" {
 
   provisioner "local-exec" {
     when    = "destroy"
-    command = "sed 's/${var.vm_name_prefix}-worker-[0-9]*$//' config/hosts.ini > config/hosts_remove_${count.index}.ini && sed -i '1 i\\${var.vm_name_prefix}-worker-${count.index}\\ ansible_host=${self.default_ip_address}' config/hosts_remove_${count.index}.ini && sed -i 's/\\[kube-node\\]/\\[kube-node\\]\\n${var.vm_name_prefix}-worker-${count.index}/' config/hosts_remove_${count.index}.ini"
-  }
-
-  provisioner "local-exec" {
-    when    = "destroy"
-    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts_remove_${count.index}.ini -b -u ${var.vm_user} -e \"ansible_ssh_pass=$VM_PASSWORD ansible_become_pass=$VM_PRIVILEGE_PASSWORD delete_nodes_confirmation=yes\" -v remove-node.yml"
+    command = "cd ansible/kubespray && ansible-playbook -i ../../config/hosts.ini -b -u ${var.vm_user} -e \"ansible_ssh_pass=$VM_PASSWORD ansible_become_pass=$VM_PRIVILEGE_PASSWORD node=$VM_NAME delete_nodes_confirmation=yes\" -v remove-node.yml"
 
     environment = {
       VM_PASSWORD           = "${var.vm_password}"
       VM_PRIVILEGE_PASSWORD = "${var.vm_privilege_password}"
+      VM_NAME               = "${var.vm_name_prefix}-worker-${count.index}"
     }
 
     on_failure = "continue"
@@ -550,7 +546,7 @@ resource "vsphere_virtual_machine" "worker" {
 
   provisioner "local-exec" {
     when    = "destroy"
-    command = "rm config/hosts_remove_${count.index}.ini"
+    command = "sed 's/${var.vm_name_prefix}-worker-[0-9]*$//' config/hosts.ini"
   }
 
   depends_on = ["vsphere_virtual_machine.master", "local_file.kubespray_hosts", "local_file.kubespray_k8s_cluster", "local_file.kubespray_all"]
@@ -563,10 +559,10 @@ resource "vsphere_virtual_machine" "haproxy" {
   resource_pool_id = "${vsphere_resource_pool.resource_pool.id}"
   datastore_id     = "${data.vsphere_datastore.datastore.id}"
   folder           = "${vsphere_folder.folder.path}"
-  
-  num_cpus         = "${var.vm_haproxy_cpu}"
-  memory           = "${var.vm_haproxy_ram}"
-  guest_id         = "${data.vsphere_virtual_machine.template.guest_id}"
+
+  num_cpus = "${var.vm_haproxy_cpu}"
+  memory   = "${var.vm_haproxy_ram}"
+  guest_id = "${data.vsphere_virtual_machine.template.guest_id}"
 
   network_interface {
     network_id   = "${data.vsphere_network.network.id}"
