@@ -140,10 +140,10 @@ rh_password = ""
 k8s_kubespray_url = "https://github.com/kubernetes-sigs/kubespray.git"
 
 # The version of Kubespray that will be used to deploy Kubernetes #
-k8s_kubespray_version = "v2.10.0"
+k8s_kubespray_version = "v2.10.3"
 
 # The Kubernetes version that will be deployed #
-k8s_version = "v1.14.1"
+k8s_version = "v1.14.3"
 
 # The overlay network plugin used by the Kubernetes cluster #
 k8s_network_plugin = "calico"
