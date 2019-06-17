@@ -397,7 +397,7 @@ resource "null_resource" "kubectl_configuration" {
   }
 
   provisioner "local-exec" {
-    command = "sed 's/lb-apiserver.kubernetes.local/${var.vm_haproxy_vip}/g' config/admin.conf | tee config/admin.conf"
+    command = "sed 's/lb-apiserver.kubernetes.local/${var.vm_haproxy_vip}/g' config/admin.conf | tee config/admin.conf.new && mv config/admin.conf.new config/admin.conf && chmod 700 config/admin.conf"
   }
 
   provisioner "local-exec" {
