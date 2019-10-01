@@ -10,7 +10,7 @@ vrrp_script check_haproxy {
 
 vrrp_instance VI_01 {
     state SLAVE
-    interface ens192
+    interface ens160
     virtual_router_id 51
     priority 100
 
