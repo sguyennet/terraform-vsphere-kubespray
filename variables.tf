@@ -130,6 +130,10 @@ variable "vm_haproxy_vip" {
   description = "IP used for the HAProxy floating VIP"
 }
 
+variable "vm_haproxy_nic" {
+  description = "Interface name used in HAProxy VM"
+}
+
 variable "vm_haproxy_ips" {
   type        = "map"
   description = "IP used for two HAProxy virtual machine"
