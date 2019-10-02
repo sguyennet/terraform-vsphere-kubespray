@@ -116,6 +116,9 @@ vm_haproxy_ram = "1024"
 # The IP address of the load balancer floating VIP #
 vm_haproxy_vip = ""
 
+# The name of the network interface in the HAProxy template - i.e. ens160
+vm_haproxy_nic = ""
+
 # The IP address of the load balancer virtual machine #
 vm_haproxy_ips = {
   "0" = ""
