@@ -160,7 +160,7 @@ data "template_file" "keepalived_master" {
 
   vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
-    interface_name = ${var.vm_haproxy_nic}"
+    interface_name = "${var.vm_haproxy_nic}"
   }
 }
 
