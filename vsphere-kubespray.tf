@@ -160,6 +160,7 @@ data "template_file" "keepalived_master" {
 
   vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
+    interface_name = ${var.vm_haproxy_nic}"
   }
 }
 
@@ -169,6 +170,7 @@ data "template_file" "keepalived_slave" {
 
   vars = {
     virtual_ip = "${var.vm_haproxy_vip}"
+    interface_name = ${var.vm_haproxy_nic}"
   }
 }
 
