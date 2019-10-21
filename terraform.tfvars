@@ -36,6 +36,9 @@ vsphere_vcp_datastore = ""
 # Username used to SSH to the virtual machines #
 vm_user = ""
 
+# Password used to sudo to get privilege #
+vm_privilege_password = ""
+
 # The linux distribution used by the virtual machines (ubuntu/debian/centos/rhel) #
 vm_distro = ""
 
