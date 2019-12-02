@@ -75,6 +75,7 @@ $ vim terraform.tfvars
 
 | Kubernetes version | Kubespray version |
 |:------------------:|:-----------------:|
+|      v1.15.3       |      v2.11.0      |
 |      v1.14.3       |      v2.10.3      |
 |      v1.14.1       |      v2.10.0      |
 |      v1.13.5       |      v2.9.0       |
