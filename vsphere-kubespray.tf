@@ -479,7 +479,7 @@ resource "vsphere_compute_cluster_vm_anti_affinity_rule" "master_anti_affinity_r
   count               = "${var.vsphere_enable_anti_affinity == "true" ? 1 : 0}"
   name                = "${var.vm_name_prefix}-master-anti-affinity-rule"
   compute_cluster_id  = "${data.vsphere_compute_cluster.cluster.id}"
-  virtual_machine_ids = ["${vsphere_virtual_machine.master.*.id}"]
+  virtual_machine_ids = "${vsphere_virtual_machine.master.*.id}"
 
   depends_on = ["vsphere_virtual_machine.master"]
 }
