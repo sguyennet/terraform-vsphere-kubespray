@@ -22,8 +22,8 @@ defaults
 	option	httplog
 	option	dontlognull
         timeout connect 5000
-        timeout client  50000
-        timeout server  50000
+        timeout client  4h
+        timeout server  4h
 
 frontend kubernetes
 	bind ${bind_ip}:6443
