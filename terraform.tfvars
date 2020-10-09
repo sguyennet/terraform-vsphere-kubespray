@@ -140,10 +140,10 @@ rh_password = ""
 k8s_kubespray_url = "https://github.com/kubernetes-sigs/kubespray.git"
 
 # The version of Kubespray that will be used to deploy Kubernetes #
-k8s_kubespray_version = "v2.11.0"
+k8s_kubespray_version = "v2.14.1"
 
 # The Kubernetes version that will be deployed #
-k8s_version = "v1.15.3"
+k8s_version = "v1.19.2"
 
 # The overlay network plugin used by the Kubernetes cluster #
 k8s_network_plugin = "calico"
@@ -151,5 +151,4 @@ k8s_network_plugin = "calico"
 # If you use Weavenet as an overlay network, you need to specify an encryption password #
 k8s_weave_encryption_password = ""
 
-# The DNS service used by the Kubernetes cluster (coredns/kubedns) #
 k8s_dns_mode = "coredns"
